@@ -157,7 +157,7 @@ export default function PopupApp() {
 
       <p className="text-xs text-muted-foreground">
         {total ?? "…"} across all pages ·{" "}
-        <kbd className="rounded border bg-muted px-1 font-mono text-[10px]">Alt+Shift+C</kbd> toggles
+        <kbd className="rounded border bg-muted px-1 font-mono text-[10px]">Alt+C</kbd> toggles
         comment mode
       </p>
     </main>

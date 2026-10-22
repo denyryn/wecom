@@ -13,7 +13,7 @@ React + Tailwind CSS v4 + shadcn/ui.
 
 ## What works
 
-- `Alt+Shift+C` (or the toolbar popup) arms comment mode on any page.
+- `Alt+C` (or the toolbar popup) arms comment mode on any page.
 - Click an element: the page's own click/submit is swallowed and a composer opens anchored to it.
 - Save writes the comment to `chrome.storage.local` under the page's URL bucket, and a numbered
   pin appears on the element. Pins follow scroll and resize.
@@ -51,7 +51,7 @@ npx serve fixtures        # http://localhost:3000/demo.html
 
 | Action | Key |
 | --- | --- |
-| Toggle comment mode | `Alt+Shift+C` |
+| Toggle comment mode | `Alt+C` |
 | Leave comment mode / close card | `Esc` |
 | Save a comment | `⌘/Ctrl+Enter` |
 

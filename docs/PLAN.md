@@ -125,7 +125,7 @@ docs/PLAN.md
   "action": { "default_popup": "popup/index.html" },
   "commands": {
     "toggle-inspect": {
-      "suggested_key": { "default": "Alt+Shift+C" },
+      "suggested_key": { "default": "Alt+C" },
       "description": "Toggle element comment mode"
     }
   },
@@ -254,7 +254,7 @@ Extension.js, React, or the extension APIs, which is why it is unit-testable in 
 
 **Idle** — nothing intercepts the page; existing pins are visible.
 
-**Inspect mode** (`Alt+Shift+C`, toolbar button, or popup button)
+**Inspect mode** (`Alt+C`, toolbar button, or popup button)
 - `pointermove` → `elementFromPoint` → 2px outline + label with `tag#id.class` and role.
 - Capture-phase `pointerdown`, `mousedown`, `click`, `submit`: `preventDefault()` +
   `stopPropagation()` while armed. A click must never navigate, submit, or focus an input.
