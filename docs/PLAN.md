@@ -38,7 +38,7 @@ The JSON is the product. The UI exists only to produce it comfortably.
 | Bundler | Rspack via Extension.js `config`/`configResolved` — never touch it directly | Vite plugins (`@tailwindcss/vite`) do **not** apply; Tailwind goes through PostCSS |
 | Manifest | `src/manifest.json` (never `public/`, which fails the build) | Framework compiles entrypoints from manifest paths |
 | Config | `extension.config.js` (`.js`/`.mjs`/`.cjs` only, `.ts` is never loaded) | Browser profiles, dev port, build targets |
-| UI | React 19 + shadcn/ui + Tailwind v4 | Fast, consistent, and officially supported by Extension.js |
+| UI | React 18 + shadcn/ui + Tailwind v4 | Fast, consistent, and officially supported by Extension.js. React 18 is what the official template pins; upgrading is not worth the spike risk |
 | Content UI mount | Shadow root (`data-extension-root`, `all: initial !important`) | Page CSS cannot reach in, our CSS cannot leak out |
 | Content CSS | Imported into the entry, fetched as a `data:` URL into a `<style>` **inside the shadow root** | Manifest `content_scripts[].css` injects unscoped into the page document — Tailwind preflight there would destroy the host page |
 | Popup | Normal extension page (`src/popup/index.html`) + shadcn | No shadow root, so all portal-based primitives are free |
@@ -345,6 +345,18 @@ the shadow root as a `<style>` and the host page's own Tailwind does not leak in
 *Done when:* highlight renders styled on `fixtures/demo.html` **and** on a page that itself uses
 Tailwind, a click in inspect mode does not navigate a link, `Esc` restores normal behaviour, and
 saving the file re-injects exactly one host (no stacking).
+
+**M0 outcome (built)** — scaffolded from `content-react` and adjusted:
+React 18 (template default), shared `src/styles/tokens.css` imported by both entries,
+options page and template marketing assets removed, lockfile tracked.
+Two toolchain traps found and fixed: TypeScript 7 removed `baseUrl` (use `paths` only),
+and the shadcn CLI resolves the `utils` alias to the npm package `cn` — install
+`clsx` + `tailwind-merge` and rewrite the generated imports to `@/lib/utils`.
+
+Build-level proofs pass (see README table): no page-injected CSS, one `data:text/css` payload,
+`:root,:host` tokens present, `@/` aliases resolve, `tsc --noEmit` clean.
+Runtime proofs are **open** because Chrome 155 dropped `--load-extension` and the Playwright
+Chromium download was deferred. Gate M1 on them — they are the M0 acceptance criteria above.
 
 **M1 — comments in memory**
 `position.ts`, composer, save, pins, read popover, edit, delete, single-card rule, keyboard walk.

@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Commentator fixture</title>
+    <!--
+      Hostile CSS on purpose. It mimics the two failure modes the shadow root is
+      there to stop: global resets that would restyle our overlay, and rules that
+      would hit the host element itself. If the overlay still looks right here,
+      isolation works.
+    -->
+    <style>
+      * {
+        font-family: Georgia, "Times New Roman", serif !important;
+        box-sizing: content-box;
+      }
+      div {
+        opacity: 0.8;
+      }
+      body {
+        margin: 0;
+        background: #fbf7ef;
+        color: #2b2b2b;
+        padding: 24px 24px 120px;
+      }
+      .site-header {
+        position: fixed;
+        inset: 0 0 auto 0;
+        height: 56px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 0 24px;
+        background: #2b2b2b;
+        z-index: 9999;
+      }
+      .site-header a,
+      .site-header span {
+        color: #fff;
+        opacity: 1;
+      }
+      main {
+        padding-top: 56px;
+        max-width: 900px;
+      }
+      .btn {
+        padding: 8px 14px;
+        border: 1px solid #2b2b2b;
+        background: #fff;
+        cursor: pointer;
+      }
+      .btn-primary {
+        background: #2b2b2b;
+        color: #fff;
+      }
+      .item {
+        padding: 12px;
+        border-bottom: 1px dashed #ccc;
+      }
+      .deep {
+        border: 1px solid #ddd;
+        padding: 10px;
+        margin-top: 8px;
+      }
+      button,
+      input {
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="site-header">
+      <span>Fixture</span>
+      <a id="nav-link" href="https://example.com/left">A link that must not navigate</a>
+    </header>
+
+    <main>
+      <h1>Element commenting fixture</h1>
+      <p>
+        Structural cases the locator has to survive: duplicate classes, an id,
+        deep nesting, an SVG child, and a form that must not submit.
+      </p>
+
+      <h2>Actions</h2>
+      <div class="actions">
+        <button id="primary-action" class="btn btn-primary" data-testid="primary-action">
+          Primary action
+        </button>
+        <button class="btn">Secondary action</button>
+        <button class="btn">Secondary action</button>
+      </div>
+
+      <h2>Form</h2>
+      <form id="signup" action="/submit" method="post">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" placeholder="you@example.com" />
+        <button class="btn btn-primary" type="submit">Subscribe</button>
+      </form>
+
+      <h2>List</h2>
+      <ul>
+        <li class="item">First row <button class="btn">Edit</button></li>
+        <li class="item">Second row <button class="btn">Edit</button></li>
+        <li class="item">Third row <button class="btn">Edit</button></li>
+      </ul>
+
+      <h2>Deep nesting</h2>
+      <div class="deep"><div><div><div><div>
+        <span id="buried">Buried target</span>
+      </div></div></div></div></div>
+
+      <h2>Inline SVG</h2>
+      <svg width="48" height="48" viewBox="0 0 48 48" aria-label="Star">
+        <circle cx="24" cy="24" r="20" fill="#2b2b2b" />
+        <path d="M24 10l4 9 10 1-7 7 2 10-9-5-9 5 2-10-7-7 10-1z" fill="#fbf7ef" />
+      </svg>
+
+      <h2>Long text</h2>
+      <p id="long">
+        This paragraph exists so the text signal has something long and
+        multiline to trim, with &amp; entities and     irregular spacing.
+      </p>
+    </main>
+
+    <script>
+      // Observable side effects, so a test can prove a click was blocked.
+      window.__navAttempts = 0
+      window.__submitAttempts = 0
+
+      document.getElementById("nav-link").addEventListener("click", () => {
+        window.__navAttempts += 1
+      })
+
+      document.getElementById("signup").addEventListener("submit", (event) => {
+        window.__submitAttempts += 1
+        event.preventDefault()
+      })
+    </script>
+  </body>
+</html>
