@@ -1,4 +1,5 @@
 import type {Comment} from "./schema"
+import {browserApi} from "@/shared/browser"
 
 const PAGES_KEY = "pages"
 
@@ -16,21 +17,21 @@ export function urlKey(href: string = location.href): string {
 }
 
 export async function loadComments(pageKey: string): Promise<Comment[]> {
-  const stored = await chrome.storage.local.get(PAGES_KEY)
+  const stored = await browserApi().storage.local.get(PAGES_KEY)
   const pages = stored[PAGES_KEY] as Pages | undefined
 
   return pages?.[pageKey] ?? []
 }
 
 export async function saveComments(pageKey: string, comments: Comment[]): Promise<void> {
-  const stored = await chrome.storage.local.get(PAGES_KEY)
+  const stored = await browserApi().storage.local.get(PAGES_KEY)
   const pages = (stored[PAGES_KEY] as Pages | undefined) ?? {}
 
-  await chrome.storage.local.set({[PAGES_KEY]: {...pages, [pageKey]: comments}})
+  await browserApi().storage.local.set({[PAGES_KEY]: {...pages, [pageKey]: comments}})
 }
 
 export async function loadAllComments(): Promise<Pages> {
-  const stored = await chrome.storage.local.get(PAGES_KEY)
+  const stored = await browserApi().storage.local.get(PAGES_KEY)
 
   return (stored[PAGES_KEY] as Pages | undefined) ?? {}
 }
@@ -39,7 +40,7 @@ export async function clearComments(pageKey: string): Promise<void> {
   const pages = await loadAllComments()
   delete pages[pageKey]
 
-  await chrome.storage.local.set({[PAGES_KEY]: pages})
+  await browserApi().storage.local.set({[PAGES_KEY]: pages})
 }
 
 /**
@@ -57,7 +58,7 @@ export function watchComments(
     listener(pages?.[pageKey] ?? [])
   }
 
-  chrome.storage.onChanged.addListener(onChanged)
+  browserApi().storage.onChanged.addListener(onChanged)
 
-  return () => chrome.storage.onChanged.removeListener(onChanged)
+  return () => browserApi().storage.onChanged.removeListener(onChanged)
 }

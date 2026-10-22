@@ -3,7 +3,7 @@
 Click any element on a page, comment on it, and export a locator an AI agent can act on
 without opening DevTools.
 
-Chrome MV3 extension built with [Extension.js](https://extension.js.org) (Rspack) +
+Chrome / Firefox MV3 extension built with [Extension.js](https://extension.js.org) (Rspack) +
 React + Tailwind CSS v4 + shadcn/ui.
 
 - Requirements: **Node ≥ 22.12**, npm.
@@ -30,13 +30,17 @@ it is still present in the export.
 ```bash
 npm install
 npm run dev          # builds, watches, and opens a managed browser with the extension loaded
-npm run build        # production build -> dist/chromium
-npm run build:chrome # same, for Chrome, plus a store-ready zip in dist/
+npm run build         # production build -> dist/chromium
+npm run build:chrome  # Chrome + store-ready zip in dist/
+npm run build:firefox # Firefox gecko build + zip in dist/
 ```
 
-Load it by hand: `chrome://extensions` → Developer mode → Load unpacked → `dist/chromium`.
+Load it by hand: `chrome://extensions` → Developer mode → Load unpacked → `dist/chrome`.
 Chrome 150+ refuses `--load-extension` on the command line, so the manual path (or
 `npm run dev`, which uses a managed Chrome for Testing) is the only one.
+
+Firefox: `about:debugging#/runtime/this-firefox` → Load Temporary Add-on → `dist/firefox/manifest.json`.
+Temporary add-ons vanish on restart, which is fine for staging work.
 
 `file://` pages need "Allow access to file URLs" enabled for the extension.
 
@@ -59,11 +63,11 @@ npx serve fixtures        # http://localhost:3000/demo.html
 
 ```bash
 npx tsc --noEmit     # clean
-npm test             # 13 tests: card placement, locator build/resolve, urlKey
-npm run build        # ~452 KB extension in dist/chromium
+npm test             # 16 tests: card placement, locator build/resolve, urlKey, storage watch
+npm run build        # ~453 KB extension in dist/chromium
 ```
 
-Build-level proofs, checked against `dist/chromium`:
+Build-level proofs, checked against `dist/chrome` and `dist/firefox`:
 
 | Check | Evidence |
 | --- | --- |
@@ -88,3 +92,9 @@ page's hostile CSS, that a click really is cancelled, and that reloading leaves 
 - shadcn's generated components use the React 19 `ref`-as-prop style. React 18 drops refs on
   function components, so use `autoFocus` / plain props instead of `ref` on `Textarea`, `Input`
   and friends — or convert them to `forwardRef` first.
+- Extension.js deliberately skips the webextension polyfill on gecko builds, so `chrome.*` only
+  works in Chrome — Firefox's `chrome` alias is callback-only and `await` on it returns
+  `undefined`. All runtime API access goes through `browserApi()` in `src/shared/browser.ts`,
+  which prefers `globalThis.browser` and falls back to `globalThis.chrome`.
+- Firefox does not honour every `commands.suggested_key`; if `Alt+C` does nothing, rebind it under
+  `about:addons` → gear → Manage Extension Shortcuts.

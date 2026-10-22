@@ -25,7 +25,7 @@ The JSON is the product. The UI exists only to produce it comfortably.
 | Screenshots / thumbnails | Blows storage quota; the locator is what agents need |
 | Threads / replies | One body + edit says what you want |
 | Cloud sync, accounts, sharing | Export file is the sharing mechanism |
-| Firefox / Safari | Extension.js supports them, but the shadow-DOM + portal surface doubles. Chrome only until the UX is proven |
+| Safari | Extension.js can build it, but it needs a mac, a signed app, and Xcode in the loop. Not worth it for a local staging tool |
 | Commenting inside cross-origin iframes | Recorded in export, not interactive (§10) |
 | Dark mode | shadcn's `.dark` variant needs the host element to carry the class; not worth the plumbing yet |
 | Live preview of fixes | Different product |
@@ -35,6 +35,7 @@ The JSON is the product. The UI exists only to produce it comfortably.
 | Area | Decision | Why |
 |---|---|---|
 | Framework | Extension.js 4.1.x, `--template=content-react`, react + react-dom + TS + Tailwind v4 | Owns manifest compilation, dev server, HMR, multi-browser builds. Hand-rolling MV3 + a bundler is more config than product |
+| Browsers | Chrome/Edge MV3 + Firefox MV3 gecko build (`npm run build:firefox`) | Same source. Firefox returns promises from `browser.*` only, so runtime API access goes through `shared/browser.ts` |
 | Bundler | Rspack via Extension.js `config`/`configResolved` — never touch it directly | Vite plugins (`@tailwindcss/vite`) do **not** apply; Tailwind goes through PostCSS |
 | Manifest | `src/manifest.json` (never `public/`, which fails the build) | Framework compiles entrypoints from manifest paths |
 | Config | `extension.config.js` (`.js`/`.mjs`/`.cjs` only, `.ts` is never loaded) | Browser profiles, dev port, build targets |
@@ -427,4 +428,4 @@ Runtime acceptance for everything above is still unverified: Chrome 155 dropped
 1. `urlKey`: ignore tracking params (`utm_*`, `fbclid`) specifically, or keep dropping all query?
 2. Is a `status: open | resolved` toggle useful, or is delete enough?
 3. Any need for a second export format (markdown checklist, Linear/GitHub payload)?
-4. Hosted CI: does the repo need to build for Firefox too, or is Chrome-only acceptable long-term?
+4. Safari: does it matter, or is Chrome + Firefox enough? (Firefox build exists as of the gecko port.)

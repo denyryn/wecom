@@ -31,7 +31,7 @@
     "build": "extension build",
     "preview": "extension preview",
     "build:chrome": "extension build --browser chrome --zip",
-    "build:firefox": "extension build --browser firefox",
+    "build:firefox": "extension build --browser firefox --zip",
     "build:edge": "extension build --browser edge",
     "test": "vitest run"
   },

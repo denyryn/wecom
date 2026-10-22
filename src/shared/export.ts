@@ -1,6 +1,7 @@
 import type {Comment} from "./schema"
 import {SCHEMA_VERSION} from "./schema"
 import {loadAllComments} from "./storage"
+import {browserApi} from "@/shared/browser"
 
 export type ExportDoc = {
   schemaVersion: number
@@ -18,7 +19,7 @@ export async function buildExport(): Promise<ExportDoc> {
   return {
     schemaVersion: SCHEMA_VERSION,
     exportedAt: new Date().toISOString(),
-    extensionVersion: chrome.runtime.getManifest().version,
+    extensionVersion: browserApi().runtime.getManifest().version,
     comments,
   }
 }

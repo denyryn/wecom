@@ -1,6 +1,7 @@
 import ReactDOM from "react-dom/client"
 import ContentApp from "./ContentApp"
 import {emitToggleInspect} from "./toggle"
+import {browserApi} from "@/shared/browser"
 
 /**
  * Extension.js content_script entrypoint. The framework calls this on injection
@@ -39,10 +40,10 @@ export default function initial() {
   const onMessage = (message: unknown) => {
     if ((message as {type?: string} | null)?.type === "toggle-inspect") emitToggleInspect()
   }
-  chrome.runtime.onMessage.addListener(onMessage)
+  browserApi().runtime.onMessage.addListener(onMessage)
 
   return () => {
-    chrome.runtime.onMessage.removeListener(onMessage)
+    browserApi().runtime.onMessage.removeListener(onMessage)
     mountingPoint.unmount()
     host.remove()
   }

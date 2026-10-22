@@ -2,6 +2,7 @@ import * as React from "react"
 import {Button} from "@/components/ui/button"
 import {buildExport, copyExport, downloadExport} from "@/shared/export"
 import {clearComments, loadAllComments, loadComments, urlKey} from "@/shared/storage"
+import {browserApi} from "@/shared/browser"
 
 const CLEAR_CONFIRM_MS = 4000
 
@@ -35,7 +36,7 @@ export default function PopupApp() {
     alive.current = true
 
     void (async () => {
-      const [active] = await chrome.tabs.query({active: true, currentWindow: true})
+      const [active] = await browserApi().tabs.query({active: true, currentWindow: true})
       if (!alive.current) return
       setTab(active ?? null)
       await refresh(active ?? null)
@@ -175,14 +176,14 @@ function isRestricted(url?: string): boolean {
 }
 
 function sendToggle(tabId: number): Promise<void> {
-  return chrome.tabs.sendMessage(tabId, {type: "toggle-inspect"})
+  return browserApi().tabs.sendMessage(tabId, {type: "toggle-inspect"})
 }
 
 async function injectContentScript(tabId: number): Promise<void> {
-  const files = (chrome.runtime.getManifest().content_scripts ?? []).flatMap(
+  const files = (browserApi().runtime.getManifest().content_scripts ?? []).flatMap(
     (entry) => entry.js ?? []
   )
   if (files.length === 0) throw new Error("no content script declared")
 
-  await chrome.scripting.executeScript({target: {tabId}, files})
+  await browserApi().scripting.executeScript({target: {tabId}, files})
 }
