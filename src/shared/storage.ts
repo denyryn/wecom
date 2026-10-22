@@ -41,3 +41,23 @@ export async function clearComments(pageKey: string): Promise<void> {
 
   await chrome.storage.local.set({[PAGES_KEY]: pages})
 }
+
+/**
+ * The popup mutates storage in a different component; without this the open tab
+ * keeps painting pins from its own stale state (clear-this-page looked broken).
+ */
+export function watchComments(
+  pageKey: string,
+  listener: (comments: Comment[]) => void
+): () => void {
+  const onChanged = (changes: Record<string, chrome.storage.StorageChange>, area: string) => {
+    if (area !== "local" || !changes[PAGES_KEY]) return
+
+    const pages = changes[PAGES_KEY].newValue as Pages | undefined
+    listener(pages?.[pageKey] ?? [])
+  }
+
+  chrome.storage.onChanged.addListener(onChanged)
+
+  return () => chrome.storage.onChanged.removeListener(onChanged)
+}

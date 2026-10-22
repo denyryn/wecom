@@ -3,7 +3,7 @@ import {Badge} from "@/components/ui/badge"
 import {buildLocator, resolveLocator} from "@/shared/locator"
 import type {AnchorBox} from "@/shared/position"
 import {newCommentId, type Comment, type Locator} from "@/shared/schema"
-import {loadComments, saveComments, urlKey} from "@/shared/storage"
+import {loadComments, saveComments, urlKey, watchComments} from "@/shared/storage"
 import {Composer} from "./components/Composer"
 import {PinLayer, type Pin} from "./components/PinLayer"
 import {ReadCard} from "./components/ReadCard"
@@ -32,11 +32,18 @@ export default function ContentApp({host}: ContentAppProps) {
 
   React.useEffect(() => {
     let alive = true
+
     loadComments(pageKey)
       .then((stored) => alive && setComments(stored))
       .catch(() => {})
+
+    const stop = watchComments(pageKey, (next) => {
+      if (alive) setComments(next)
+    })
+
     return () => {
       alive = false
+      stop()
     }
   }, [pageKey])
 

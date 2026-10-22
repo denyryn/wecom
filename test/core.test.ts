@@ -1,7 +1,8 @@
-import {beforeEach, describe, expect, it} from "vitest"
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
 import {buildLocator, resolveLocator} from "@/shared/locator"
+import type {Comment} from "@/shared/schema"
 import {placeCard} from "@/shared/position"
-import {urlKey} from "@/shared/storage"
+import {urlKey, watchComments} from "@/shared/storage"
 
 const viewport = {width: 1000, height: 800}
 const card = {width: 320, height: 180}
@@ -108,5 +109,59 @@ describe("urlKey", () => {
 
   it("keeps the origin for the root path", () => {
     expect(urlKey("https://example.com")).toBe("https://example.com")
+  })
+})
+
+describe("watchComments", () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  function stubChrome() {
+    const listeners: Array<(changes: Record<string, unknown>, area: string) => void> = []
+    vi.stubGlobal("chrome", {
+      storage: {
+        onChanged: {
+          addListener: (fn: (changes: Record<string, unknown>, area: string) => void) =>
+            listeners.push(fn),
+          removeListener: (fn: (changes: Record<string, unknown>, area: string) => void) => {
+            const index = listeners.indexOf(fn)
+            if (index >= 0) listeners.splice(index, 1)
+          }
+        }
+      }
+    })
+    return listeners
+  }
+
+  it("reports the bucket for this page from a local change", () => {
+    const listeners = stubChrome()
+    const seen: Comment[][] = []
+    watchComments("http://localhost:3000/checkout", (comments) => seen.push(comments))
+
+    const comment = {id: "1"} as unknown as Comment
+    listeners[0]({pages: {newValue: {"http://localhost:3000/checkout": [comment]}}}, "local")
+
+    expect(seen).toEqual([[comment]])
+  })
+
+  it("reports an empty list when the page bucket is removed", () => {
+    const listeners = stubChrome()
+    const seen: Comment[][] = []
+    watchComments("http://localhost:3000/checkout", (comments) => seen.push(comments))
+
+    listeners[0]({pages: {newValue: {}}}, "local")
+
+    expect(seen).toEqual([[]])
+  })
+
+  it("ignores other areas and detaches on unsubscribe", () => {
+    const listeners = stubChrome()
+    const seen: Comment[][] = []
+    const stop = watchComments("http://x/y", (comments) => seen.push(comments))
+
+    listeners[0]({pages: {newValue: {}}}, "sync")
+    expect(seen).toHaveLength(0)
+
+    stop()
+    expect(listeners).toHaveLength(0)
   })
 })
