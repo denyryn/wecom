@@ -93,6 +93,11 @@ page's hostile CSS, that a click really is cancelled, and that reloading leaves 
 - Portal-based shadcn primitives (Dialog/Popover/Tooltip/Select/DropdownMenu) must not be used
   inside the content overlay: they portal to `document.body`, outside the shadow root.
   They are avoided in the popup too, for consistency.
+- Extension icons come from `favicon/favicon.svg`. That file is *not* vector: it is a 942×942
+  canvas wrapping one embedded raster, so every size is a downsample. The two-row "We / Com"
+  lockup only survives from 48px up; 16 and 32 use the "W" mark alone. Padding is trimmed per
+  size — re-measure with `magick favicon/favicon.svg -trim -format '%wx%h+%X+%Y\n' info:`
+  before re-rendering, because the crop offsets are hardcoded.
 - shadcn's generated components use the React 19 `ref`-as-prop style. React 18 drops refs on
   function components, so use `autoFocus` / plain props instead of `ref` on `Textarea`, `Input`
   and friends — or convert them to `forwardRef` first.
