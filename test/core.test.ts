@@ -1,4 +1,5 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
+import {projectComment, serializeExport} from "@/shared/export"
 import {buildLocator, resolveLocator} from "@/shared/locator"
 import type {Comment} from "@/shared/schema"
 import {placeCard} from "@/shared/position"
@@ -109,6 +110,93 @@ describe("urlKey", () => {
 
   it("keeps the origin for the root path", () => {
     expect(urlKey("https://example.com")).toBe("https://example.com")
+  })
+})
+
+const fullComment = {
+  id: "1d4f0a9e-3c1b-4f2a-9a55-7b0c2e8f1a33",
+  createdAt: "2026-10-22T11:58:02.114Z",
+  updatedAt: "2026-10-22T11:59:40.002Z",
+  status: "open",
+  body: "This is the primary action — make it the only filled button.",
+  page: {
+    url: "http://localhost:3000/checkout?step=2",
+    urlKey: "http://localhost:3000/checkout",
+    title: "Checkout",
+    viewport: {width: 1440, height: 900, dpr: 2}
+  },
+  target: {
+    selector: "main.checkout > form > button.btn.btn-primary:nth-of-type(2)",
+    selectorUnique: false,
+    tag: "button",
+    id: "pay-now",
+    classes: ["btn", "btn-primary"],
+    text: "Pay now",
+    ancestors: ["body", "div#root", "main.checkout", "form#payment"],
+    domPath: "html > body > div#root > main.checkout > form#payment > button:nth-of-type(2)",
+    domIndex: [1, 0, 0, 0, 1],
+    attrs: {"type": "submit", "data-testid": "pay-now", "aria-label": "Pay now"},
+    role: "button",
+    rect: {x: 1024, y: 610, width: 180, height: 44},
+    visible: true
+  }
+} as unknown as Comment
+
+describe("projectComment", () => {
+  it("light flattens to id/url/selector/text/body with nothing else", () => {
+    expect(projectComment(fullComment, "light")).toEqual({
+      id: "1d4f0a9e-3c1b-4f2a-9a55-7b0c2e8f1a33",
+      url: "http://localhost:3000/checkout?step=2",
+      selector: "main.checkout > form > button.btn.btn-primary:nth-of-type(2)",
+      text: "Pay now",
+      body: "This is the primary action — make it the only filled button."
+    })
+    expect(projectComment(fullComment, "light")).not.toHaveProperty("target")
+    expect(projectComment(fullComment, "light")).not.toHaveProperty("page")
+    expect(projectComment(fullComment, "light")).not.toHaveProperty("createdAt")
+  })
+
+  it("medium keeps the full record minus domPath/domIndex/ancestors", () => {
+    const projected = projectComment(fullComment, "medium")
+
+    expect(projected).toHaveProperty("page")
+    expect(projected).toHaveProperty("target.selector")
+    expect(projected).toHaveProperty("target.selectorUnique")
+    expect(projected).toHaveProperty("target.rect")
+    expect(projected).toHaveProperty("target.attrs")
+    expect(projected).not.toHaveProperty("target.domPath")
+    expect(projected).not.toHaveProperty("target.domIndex")
+    expect(projected).not.toHaveProperty("target.ancestors")
+  })
+
+  it("heavy returns the complete record unchanged", () => {
+    expect(projectComment(fullComment, "heavy")).toEqual(fullComment)
+    expect(projectComment(fullComment, "heavy")).toHaveProperty("target.domPath")
+    expect(projectComment(fullComment, "heavy")).toHaveProperty("target.domIndex")
+    expect(projectComment(fullComment, "heavy")).toHaveProperty("target.ancestors")
+  })
+
+  it("does not mutate the input", () => {
+    projectComment(fullComment, "medium")
+    projectComment(fullComment, "light")
+
+    expect(fullComment.target).toHaveProperty("domPath")
+    expect(fullComment.target).toHaveProperty("domIndex")
+    expect(fullComment.target).toHaveProperty("ancestors")
+  })
+})
+
+describe("serializeExport", () => {
+  it("is minified: no newlines", () => {
+    const output = serializeExport({
+      schemaVersion: 2,
+      detail: "light",
+      exportedAt: "2026-10-22T12:00:00.000Z",
+      extensionVersion: "0.1.0",
+      comments: [projectComment(fullComment, "light")]
+    })
+
+    expect(output).not.toContain("\n")
   })
 })
 

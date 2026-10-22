@@ -44,7 +44,10 @@ export type Comment = {
   target: Locator
 }
 
-export const SCHEMA_VERSION = 1
+export const EXPORT_DETAILS = ["light", "medium", "heavy"] as const
+export type ExportDetail = (typeof EXPORT_DETAILS)[number]
+
+export const SCHEMA_VERSION = 2
 
 export function newCommentId(): string {
   // randomUUID needs a secure context; http:// staging hosts do not qualify.

@@ -284,9 +284,15 @@ This is a normal extension page, so shadcn `Dialog`/`Tooltip`/`Tooltip` are fine
 
 `schemaVersion` is bumped on any breaking change; consumers must reject unknown majors.
 
+`schemaVersion` is **2**. Every document carries a `detail` level — `light`, `medium` or `heavy`
+(default `medium`) — and the shape of `comments` depends on it, so a consumer must read `detail`
+first. Output is minified. The authoritative field-by-field contract is
+[`schema.md`](schema.md); the block below is the `heavy` shape.
+
 ```json
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
+  "detail": "heavy",
   "exportedAt": "2026-10-22T12:00:00.000Z",
   "extensionVersion": "0.1.0",
   "comments": [

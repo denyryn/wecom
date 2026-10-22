@@ -1,6 +1,7 @@
 import * as React from "react"
 import {Button} from "@/components/ui/button"
 import {buildExport, copyExport, downloadExport} from "@/shared/export"
+import {EXPORT_DETAILS, type ExportDetail} from "@/shared/schema"
 import {clearComments, loadAllComments, loadComments, urlKey} from "@/shared/storage"
 import {browserApi} from "@/shared/browser"
 
@@ -12,6 +13,7 @@ export default function PopupApp() {
   const [total, setTotal] = React.useState<number | null>(null)
   const [armed, setArmed] = React.useState(false)
   const [copyState, setCopyState] = React.useState<"copied" | "failed" | null>(null)
+  const [detail, setDetail] = React.useState<ExportDetail>("medium")
   const [note, setNote] = React.useState<string | null>(null)
 
   const alive = React.useRef(true)
@@ -83,13 +85,13 @@ export default function PopupApp() {
 
   const copy = async () => {
     disarm()
-    const ok = await copyExport(await buildExport())
+    const ok = await copyExport(await buildExport(detail))
     if (alive.current) setCopyState(ok ? "copied" : "failed")
   }
 
   const download = () => {
     disarm()
-    void buildExport().then(downloadExport)
+    void buildExport(detail).then(downloadExport)
   }
 
   const clearPage = async () => {
@@ -128,6 +130,22 @@ export default function PopupApp() {
         <Button onClick={toggle} className="w-full">
           Comment mode
         </Button>
+
+        <div className="flex gap-2">
+          <span className="self-center text-xs text-muted-foreground">Detail</span>
+          {EXPORT_DETAILS.map((value) => (
+            <Button
+              key={value}
+              variant={detail === value ? "default" : "outline"}
+              size="sm"
+              aria-pressed={detail === value}
+              className="flex-1"
+              onClick={() => setDetail(value)}
+            >
+              {value}
+            </Button>
+          ))}
+        </div>
 
         <div className="flex gap-2">
           <Button variant="outline" className="flex-1" onClick={copy}>

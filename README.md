@@ -20,6 +20,9 @@ React + Tailwind CSS v4 + shadcn/ui.
 - Click a pin to read the comment, edit the body, or delete it (two-click confirm).
 - Popup: comments on the active page, total across pages, comment-mode toggle, copy JSON,
   download JSON, clear this page.
+- Export detail: `light` (`id`/`url`/`selector`/`text`/`body` only), `medium` (default), `heavy`
+  (adds `domPath`/`ancestors`/`domIndex`, so a locator survives a refactor). On a 40-comment
+  export that is ~2.5k / ~7.6k / ~9.5k tokens. Output is minified; `schemaVersion` is 2.
 
 Not built yet: stale-element reporting, iframe records, focus trap for the card, zoom handling,
 and the Playwright end-to-end spec. A comment whose element has disappeared simply has no pin;
@@ -63,7 +66,8 @@ npx serve fixtures        # http://localhost:3000/demo.html
 
 ```bash
 npx tsc --noEmit     # clean
-npm test             # 16 tests: card placement, locator build/resolve, urlKey, storage watch
+npm test             # 21 tests: card placement, locator build/resolve, urlKey, storage watch,
+                     #            export detail projection
 npm run build        # ~453 KB extension in dist/chromium
 ```
 

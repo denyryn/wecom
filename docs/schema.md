@@ -4,7 +4,7 @@ The JSON produced by **Copy JSON** / **Download JSON** in the popup is the produ
 document is the contract for anyone consuming it — most importantly AI agents acting on UI
 review comments.
 
-`schemaVersion` is **1**.
+`schemaVersion` is **2**.
 
 ## `schemaVersion` policy
 
@@ -12,19 +12,44 @@ review comments.
 - Additive changes (new optional fields) do **not** bump the version.
 - Consumers **must reject documents with an unknown major** rather than guess at the shape —
   silently misreading a locator points an agent at the wrong element, which is worse than failing.
+- Version 2 (this one) is the first version with a `detail` field: the shape of each entry in
+  `comments` depends on `detail`, so a consumer **must read `detail` before reading
+  `comments`** — otherwise it cannot know which fields to expect.
 
 ## Structure
 
-`ExportDoc` → `comments: Comment[]` → each `Comment` has `page: PageRef` and `target: Locator`.
+`ExportDoc` → `comments: ExportComment[]` → the shape of each comment depends on `detail`
+(see the matrix below). `detail: "heavy"` carries the full `Comment` (with `page: PageRef`
+and `target: Locator`), documented in full below.
 
 ### `ExportDoc`
 
 | Field | Type | Meaning |
 |---|---|---|
-| `schemaVersion` | `number` | Contract version, `1` today |
+| `schemaVersion` | `number` | Contract version, `2` today |
+| `detail` | `"light" \| "medium" \| "heavy"` | Export detail level, default `medium` |
 | `exportedAt` | `string` | ISO 8601 UTC timestamp of the export |
 | `extensionVersion` | `string` | Extension version (`manifest.json`) that produced it |
-| `comments` | `Comment[]` | Every comment on every page, sorted by `createdAt` ascending |
+| `comments` | `ExportComment[]` | Every comment on every page, sorted by `createdAt` ascending |
+
+Read `detail` **before** `comments`: the target shape varies by level (policy
+consequence of version 2 — v1 consumers must reject rather than misread).
+
+### Detail levels
+
+| Level | Comment fields | Target fields |
+|---|---|---|
+| `light` | Flat: `id`, `url`, `selector`, `text`, `body` | — (no `page`, no `target`) |
+| `medium` | `id`, `createdAt`, `updatedAt`, `status`, `body`, `page` | Locator without `domPath`, `domIndex`, `ancestors` |
+| `heavy` | Same fields as `medium` | Complete `Locator`, including the three fallback fields |
+
+- **light** cannot recover from a changed DOM (a selector that no longer resolves has no
+  fallback path) and has no page title/viewport.
+- **medium** resolves and self-verifies (`selector` + tag check + text/rect sanity-check) but
+  has no fallback path when the structure changed.
+- **heavy** survives a refactor: `domPath`/`domIndex`/`ancestors` always re-anchor the element.
+
+Output is **minified JSON** (no pretty-printing) — token size matters for agents.
 
 ### `Comment`
 
@@ -94,9 +119,12 @@ viewport scroll added), so it is scroll-independent: it does not change as the u
 
 ## Example
 
+This example is `detail: "heavy"` — the complete record:
+
 ```json
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
+  "detail": "heavy",
   "exportedAt": "2026-10-22T12:00:00.000Z",
   "extensionVersion": "0.1.0",
   "comments": [
@@ -134,8 +162,16 @@ viewport scroll added), so it is scroll-independent: it does not change as the u
 
 ## How an agent should use it
 
+The steps differ by `detail` level:
+
+- **light**: resolve the `selector` in the live DOM — that is the only resolution signal.
+  Verify that the resolved element's text matches `text`; if nothing resolves, the element is
+  not findable from a light export.
+- **medium** / **heavy**: resolve and self-verify:
+
 1. Resolve `target.selector` in the live DOM first — the fast path.
-2. If it does not match (or matches an unexpected element), fall back to `target.domPath`.
+2. (heavy only) If it does not match (or matches an unexpected element), fall back to
+   `target.domPath`; medium does not carry it.
 3. Verify the resolved node's tag matches `target.tag`. If it does not, treat resolution as
    failed.
 4. Sanity-check against `target.text` and `target.rect` (text should appear in the element or
