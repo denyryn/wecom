@@ -9,6 +9,21 @@ React + Tailwind CSS v4 + shadcn/ui.
 - Requirements: **Node ≥ 22.12**, npm.
 - Spec: [`.claude/prds/web-ui-commentator.prd.md`](.claude/prds/web-ui-commentator.prd.md)
 - Implementation plan: [`docs/PLAN.md`](docs/PLAN.md)
+- Export contract: [`docs/schema.md`](docs/schema.md)
+
+## What works
+
+- `Alt+Shift+C` (or the toolbar popup) arms comment mode on any page.
+- Click an element: the page's own click/submit is swallowed and a composer opens anchored to it.
+- Save writes the comment to `chrome.storage.local` under the page's URL bucket, and a numbered
+  pin appears on the element. Pins follow scroll and resize.
+- Click a pin to read the comment, edit the body, or delete it (two-click confirm).
+- Popup: comments on the active page, total across pages, comment-mode toggle, copy JSON,
+  download JSON, clear this page.
+
+Not built yet: stale-element reporting, iframe records, focus trap for the card, zoom handling,
+and the Playwright end-to-end spec. A comment whose element has disappeared simply has no pin;
+it is still present in the export.
 
 ## Develop
 
@@ -16,9 +31,13 @@ React + Tailwind CSS v4 + shadcn/ui.
 npm install
 npm run dev          # builds, watches, and opens a managed browser with the extension loaded
 npm run build        # production build -> dist/chromium
+npm run build:chrome # same, for Chrome, plus a store-ready zip in dist/
 ```
 
 Load it by hand: `chrome://extensions` → Developer mode → Load unpacked → `dist/chromium`.
+Chrome 150+ refuses `--load-extension` on the command line, so the manual path (or
+`npm run dev`, which uses a managed Chrome for Testing) is the only one.
+
 `file://` pages need "Allow access to file URLs" enabled for the extension.
 
 Sample page with the awkward DOM cases (duplicate classes, deep nesting, inline SVG,
@@ -33,13 +52,18 @@ npx serve fixtures        # http://localhost:3000/demo.html
 | Action | Key |
 | --- | --- |
 | Toggle comment mode | `Alt+Shift+C` |
-| Leave comment mode | `Esc` |
+| Leave comment mode / close card | `Esc` |
+| Save a comment | `⌘/Ctrl+Enter` |
 
-## Status
+## Verification
 
-M0 (scaffold + stack spike) is **build-verified, runtime-unverified**.
+```bash
+npx tsc --noEmit     # clean
+npm test             # 13 tests: card placement, locator build/resolve, urlKey
+npm run build        # ~452 KB extension in dist/chromium
+```
 
-Proven by `npm run build` and inspecting the output:
+Build-level proofs, checked against `dist/chromium`:
 
 | Check | Evidence |
 | --- | --- |
@@ -47,15 +71,10 @@ Proven by `npm run build` and inspecting the output:
 | Tailwind theme + shadcn tokens resolve in a shadow root | inlined CSS contains `:root,:host` and `--background` |
 | Popup page gets the same tokens in document scope | `action/index.css` contains both `:root` and `:host` token blocks |
 | `@/*` path aliases resolve through Rspack | the build resolves `@/components/ui/*` |
-| Types | `npx tsc --noEmit` clean |
+| Content script is self-contained | `content-0.js` has no reference to `shared/framework.js` |
 
-Not yet verified in a browser (needs a test browser — Chrome 155+ dropped `--load-extension`,
-so it must be Chromium / Chrome for Testing):
-
-1. Overlay renders styled on `fixtures/demo.html` and is unaffected by that page's hostile CSS.
-2. In comment mode a click does not navigate a link or submit the form.
-3. `Esc` restores normal page behaviour.
-4. Re-injecting the content script leaves exactly one host element.
+Still unverified because it needs a real browser session: how the overlay looks under the fixture
+page's hostile CSS, that a click really is cancelled, and that reloading leaves one host.
 
 ## Notes
 
@@ -65,4 +84,7 @@ so it must be Chromium / Chrome for Testing):
 - `tsconfig.json` must not set `baseUrl` — TypeScript 7 removed it; `paths` alone works.
 - Portal-based shadcn primitives (Dialog/Popover/Tooltip/Select/DropdownMenu) must not be used
   inside the content overlay: they portal to `document.body`, outside the shadow root.
-  They are fine in the popup.
+  They are avoided in the popup too, for consistency.
+- shadcn's generated components use the React 19 `ref`-as-prop style. React 18 drops refs on
+  function components, so use `autoFocus` / plain props instead of `ref` on `Textarea`, `Input`
+  and friends — or convert them to `forwardRef` first.

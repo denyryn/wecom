@@ -387,6 +387,20 @@ Playwright at Chromium / Chrome for Testing, same as `extension dev` does.
 README with install steps, the `file://` "allow access" note, and an example agent prompt.
 *Done when:* the spec passes and a fresh clone builds and loads from the README alone.
 
+### Status
+
+| Milestone | State |
+|---|---|
+| M0 scaffold + stack spike | built; build-verified, runtime-unverified |
+| M1 comments in memory | built (composer, pins, read/edit/delete, viewport clamping) |
+| M2 persistence + URL scoping | built, except SPA URL-change polling |
+| M3 export contract | built (`docs/schema.md`, copy/download, unit tests for locator + placement) |
+| M4 robustness + a11y | not started |
+| M5 E2E + handoff | not started; README exists, Playwright spec does not |
+
+Runtime acceptance for everything above is still unverified: Chrome 155 dropped
+`--load-extension`, so it needs Chromium / Chrome for Testing, or `npm run dev`.
+
 ## 12. Risks and gotchas
 
 | Risk | Mitigation |
