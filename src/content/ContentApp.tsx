@@ -8,6 +8,7 @@ import {Composer} from "./components/Composer"
 import {PinLayer, type Pin} from "./components/PinLayer"
 import {ReadCard} from "./components/ReadCard"
 import {createInspector, describeElement, type HoverTarget} from "./inspect"
+import {onToggleInspect} from "./toggle"
 
 type Mode = "idle" | "inspect"
 
@@ -40,14 +41,11 @@ export default function ContentApp({host}: ContentAppProps) {
   }, [pageKey])
 
   React.useEffect(() => {
-    const onMessage = (message: unknown) => {
-      const type = (message as {type?: string} | null)?.type
-      if (type !== "toggle-inspect") return
+    // Registered from the content entry, not from here, so a toggle that
+    // arrives before React mounts is still delivered.
+    return onToggleInspect(() => {
       setMode((current) => (current === "inspect" ? "idle" : "inspect"))
-    }
-
-    chrome.runtime.onMessage.addListener(onMessage)
-    return () => chrome.runtime.onMessage.removeListener(onMessage)
+    })
   }, [])
 
   React.useEffect(() => {

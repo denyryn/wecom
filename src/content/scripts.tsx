@@ -1,11 +1,18 @@
 import ReactDOM from "react-dom/client"
 import ContentApp from "./ContentApp"
+import {emitToggleInspect} from "./toggle"
 
 /**
  * Extension.js content_script entrypoint. The framework calls this on injection
  * and calls the returned cleanup on HMR/teardown. Do not invoke it yourself.
  */
 export default function initial() {
+  // A tab that was open when the extension reloaded keeps a dead host, and the
+  // popup re-injects this script into exactly that tab.
+  for (const stale of Array.from(document.querySelectorAll("[data-extension-root]"))) {
+    stale.remove()
+  }
+
   const host = document.createElement("div")
   host.setAttribute("data-extension-root", "true")
   // The shadow root shields descendants, not the host itself: page rules like
@@ -29,7 +36,13 @@ export default function initial() {
   const mountingPoint = ReactDOM.createRoot(container)
   mountingPoint.render(<ContentApp host={host} />)
 
+  const onMessage = (message: unknown) => {
+    if ((message as {type?: string} | null)?.type === "toggle-inspect") emitToggleInspect()
+  }
+  chrome.runtime.onMessage.addListener(onMessage)
+
   return () => {
+    chrome.runtime.onMessage.removeListener(onMessage)
     mountingPoint.unmount()
     host.remove()
   }

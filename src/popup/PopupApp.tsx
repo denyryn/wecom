@@ -57,12 +57,27 @@ export default function PopupApp() {
       setNote("This page does not allow extensions.")
       return
     }
+
     try {
-      await chrome.tabs.sendMessage(tab.id, {type: "toggle-inspect"})
-      window.close()
+      await sendToggle(tab.id)
     } catch {
-      setNote("This page does not allow extensions.")
+      // No listener means the tab was opened before the extension was installed
+      // or reloaded. Injecting on demand is the difference between "reload the
+      // page" and "just works".
+      try {
+        await injectContentScript(tab.id)
+        await sendToggle(tab.id)
+      } catch {
+        setNote(
+          isRestricted(tab.url)
+            ? "This page does not allow extensions."
+            : "Could not attach to this page. Reload it, then try again."
+        )
+        return
+      }
     }
+
+    window.close()
   }
 
   const copy = async () => {
@@ -147,4 +162,27 @@ export default function PopupApp() {
       </p>
     </main>
   )
+}
+
+const RESTRICTED_URL = /^(chrome|edge|about|devtools|view-source|chrome-extension|moz-extension):/i
+
+function isRestricted(url?: string): boolean {
+  return (
+    !url ||
+    RESTRICTED_URL.test(url) ||
+    url.startsWith("https://chromewebstore.google.com")
+  )
+}
+
+function sendToggle(tabId: number): Promise<void> {
+  return chrome.tabs.sendMessage(tabId, {type: "toggle-inspect"})
+}
+
+async function injectContentScript(tabId: number): Promise<void> {
+  const files = (chrome.runtime.getManifest().content_scripts ?? []).flatMap(
+    (entry) => entry.js ?? []
+  )
+  if (files.length === 0) throw new Error("no content script declared")
+
+  await chrome.scripting.executeScript({target: {tabId}, files})
 }
