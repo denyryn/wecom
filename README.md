@@ -40,6 +40,14 @@ npm run build:chrome  # Chrome + store-ready zip in dist/
 npm run build:firefox # Firefox gecko build + zip in dist/
 ```
 
+Pushing a `v*` tag builds both browsers and attaches the zips to a GitHub
+release. Every push and pull request also keeps them as the `extension-zips`
+workflow artifact.
+
+```bash
+git tag v0.1.0 && git push origin v0.1.0
+```
+
 Load it by hand: `chrome://extensions` → Developer mode → Load unpacked → `dist/chrome`.
 Chrome 150+ refuses `--load-extension` on the command line, so the manual path (or
 `npm run dev`, which uses a managed Chrome for Testing) is the only one.
@@ -69,9 +77,9 @@ npx serve fixtures        # http://localhost:3000/demo.html
 
 ```bash
 npx tsc --noEmit     # clean
-npm test             # 21 tests: card placement, locator build/resolve, urlKey, storage watch,
-                     #            export detail projection
-npm run build        # ~453 KB extension in dist/chromium
+npm test             # 26 tests: card placement, locator build/resolve, urlKey, storage watch,
+                     #            export projection, right-click targeting, hotkey matching
+npm run build        # ~474 KB extension in dist/chromium
 ```
 
 Build-level proofs, checked against `dist/chrome` and `dist/firefox`:
