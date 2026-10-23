@@ -1,14 +1,23 @@
 import {browserApi} from "@/shared/browser"
-/**
- * The keyboard command is owned by the background worker: `commands.onCommand`
- * is not available in a content script, so the toggle is relayed to the tab.
- */
-browserApi().commands.onCommand.addListener(async (command) => {
-  if (command !== "toggle-inspect") return
+import {attachAndSend} from "@/shared/messaging"
 
-  const [tab] = await browserApi().tabs.query({active: true, currentWindow: true})
-  if (!tab?.id) return
+const MENU_ID = "comment-element"
 
-  // Throws on pages without a content script (chrome://, the Web Store).
-  browserApi().tabs.sendMessage(tab.id, {type: "toggle-inspect"}).catch(() => {})
+browserApi().runtime.onInstalled.addListener(async () => {
+  // removeAll first: update/reload reruns onInstalled and a duplicate id hits
+  // "Cannot create item with same id". Awaited because Firefox is promise-only.
+  await browserApi().contextMenus.removeAll()
+  browserApi().contextMenus.create({
+    id: MENU_ID,
+    title: "Comment on this element",
+    contexts: ["all"]
+  })
+})
+
+browserApi().contextMenus.onClicked.addListener((info, tab) => {
+  if (info.menuItemId !== MENU_ID || !tab?.id) return
+
+  // Same silent policy as the keyboard command: restricted pages just do
+  // nothing (no listener, no surfacing).
+  attachAndSend(tab.id, {type: "comment-element"}).catch(() => {})
 })

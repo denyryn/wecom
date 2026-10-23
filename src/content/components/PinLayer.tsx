@@ -1,5 +1,4 @@
 import * as React from "react"
-import {cn} from "@/lib/utils"
 import type {Comment} from "@/shared/schema"
 
 export type Pin = {
@@ -23,11 +22,9 @@ export function PinLayer({pins, activeId, onSelect}: PinLayerProps) {
           type="button"
           title={pin.comment.body}
           aria-label={`Comment ${pin.index}: ${pin.comment.body}`}
+          data-active={activeId === pin.comment.id}
           onClick={() => onSelect(pin.comment.id)}
-          className={cn(
-            "pointer-events-auto absolute flex size-[22px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground shadow-md ring-2 ring-background",
-            activeId === pin.comment.id && "ring-ring"
-          )}
+          className="pin pointer-events-auto -translate-x-1/2 -translate-y-1/2"
           style={{top: pin.rect.top, left: pin.rect.left}}
         >
           {pin.index}

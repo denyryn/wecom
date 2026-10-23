@@ -50,13 +50,12 @@ export function ReadCard({comment, anchor, onSave, onDelete, onClose}: ReadCardP
 
   return (
     <AnchoredCard anchor={anchor} onKeyDown={onKeyDown}>
-      <div className="flex items-center gap-2 border-b px-3 py-2">
-        <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-muted-foreground">
-          {comment.target.selector}
-        </span>
+      <div className="card-head">
+        <span className="element-selector">{comment.target.selector}</span>
         <Button
-          size="icon-xs"
+          size="icon-sm"
           variant="ghost"
+          className="ml-auto"
           aria-label="Close comment"
           title="Close"
           onClick={onClose}
@@ -65,14 +64,15 @@ export function ReadCard({comment, anchor, onSave, onDelete, onClose}: ReadCardP
         </Button>
       </div>
 
-      <div className="p-3">
+      <div className="card-body">
         {editing ? (
           <Textarea
             autoFocus
+            aria-label="Comment"
             value={value}
             rows={3}
             onChange={(event) => setValue(event.target.value)}
-            className="resize-none text-[13px]"
+            className="card-input min-h-20 resize-none leading-relaxed"
           />
         ) : (
           <p className="max-h-56 overflow-y-auto whitespace-pre-wrap text-[13px] leading-relaxed">
@@ -80,13 +80,13 @@ export function ReadCard({comment, anchor, onSave, onDelete, onClose}: ReadCardP
           </p>
         )}
 
-        <div className="mt-3 flex items-center justify-between">
+        <div className="card-foot">
           <span className="text-[11px] text-muted-foreground">
             {formatTime(comment.createdAt)}
           </span>
 
           {editing ? (
-            <div className="flex gap-1">
+            <div className="flex items-center gap-1">
               <Button
                 size="icon-sm"
                 variant="ghost"
@@ -107,13 +107,13 @@ export function ReadCard({comment, anchor, onSave, onDelete, onClose}: ReadCardP
               </Button>
             </div>
           ) : (
-            <div className="flex gap-1">
+            <div className="flex items-center gap-1">
               <Button
                 size={confirming ? "sm" : "icon-sm"}
                 variant={confirming ? "destructive" : "ghost"}
                 aria-label={confirming ? "Confirm delete comment" : "Delete comment"}
                 title={confirming ? "Confirm delete" : "Delete"}
-                className={confirming ? undefined : "text-destructive hover:text-destructive"}
+                className={confirming ? undefined : "text-destructive hover:bg-destructive/10 hover:text-destructive"}
                 onClick={() => (confirming ? onDelete() : setConfirming(true))}
               >
                 <Trash2 />

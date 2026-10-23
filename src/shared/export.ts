@@ -38,12 +38,8 @@ export function serializeExport(doc: ExportDoc): string {
   return JSON.stringify(doc)
 }
 
-export async function buildExport(detail: ExportDetail = "medium"): Promise<ExportDoc> {
-  const pages = await loadAllComments()
-  const comments = Object.values(pages)
-    .flat()
-    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
-
+/** Assembles the document from comments already in memory, in the given order. */
+export function buildExportFrom(comments: Comment[], detail: ExportDetail = "medium"): ExportDoc {
   return {
     schemaVersion: SCHEMA_VERSION,
     detail,
@@ -51,6 +47,15 @@ export async function buildExport(detail: ExportDetail = "medium"): Promise<Expo
     extensionVersion: browserApi().runtime.getManifest().version,
     comments: comments.map((comment) => projectComment(comment, detail)),
   }
+}
+
+export async function buildExport(detail: ExportDetail = "medium"): Promise<ExportDoc> {
+  const pages = await loadAllComments()
+  const comments = Object.values(pages)
+    .flat()
+    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+
+  return buildExportFrom(comments, detail)
 }
 
 export function downloadExport(doc: ExportDoc): void {

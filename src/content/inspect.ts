@@ -16,6 +16,19 @@ export type Inspector = {
   stop: () => void
 }
 
+/** Same eligibility the inspector uses for hover/pick, exported for the right-click target tracker. */
+export function isEligibleTarget(
+  element: Element | null,
+  host: HTMLElement
+): element is Element {
+  if (!element) return false
+  if (element === document.documentElement || element === document.body) return false
+  if (element === host || host.contains(element)) return false
+
+  const rect = element.getBoundingClientRect()
+  return rect.width > 0 && rect.height > 0
+}
+
 /**
  * Plain DOM, deliberately not React. Click interception has to be armed in the
  * capture phase on `document` and be able to cancel the event before the page
@@ -30,17 +43,8 @@ export function createInspector(options: InspectorOptions): Inspector {
 
   const isOurs = (event: Event) => event.composedPath().includes(host)
 
-  const eligible = (element: Element | null): element is Element => {
-    if (!element) return false
-    if (element === document.documentElement || element === document.body) return false
-    if (element === host || host.contains(element)) return false
-
-    const rect = element.getBoundingClientRect()
-    return rect.width > 0 && rect.height > 0
-  }
-
   const report = (element: Element | null) => {
-    if (!eligible(element)) return
+    if (!isEligibleTarget(element, host)) return
     current = element
     onHover({element, rect: element.getBoundingClientRect()})
   }
@@ -61,7 +65,9 @@ export function createInspector(options: InspectorOptions): Inspector {
     const target = document.elementFromPoint(event.clientX, event.clientY)
     suppress(event)
 
-    if (eligible(target)) onPick({element: target, rect: target.getBoundingClientRect()})
+    if (isEligibleTarget(target, host)) {
+      onPick({element: target, rect: target.getBoundingClientRect()})
+    }
   }
 
   // A click can still be synthesised (Enter/Space on a focused control, a page

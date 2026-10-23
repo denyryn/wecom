@@ -13,7 +13,9 @@ React + Tailwind CSS v4 + shadcn/ui.
 
 ## What works
 
-- `Alt+C` (or the toolbar popup) arms comment mode on any page.
+- `Ctrl+\` (or the toolbar popup) arms comment mode on any page.
+- Right-click → "Comment on this element": the composer opens directly on that element
+  (falls back to arming comment mode when the target can't be used).
 - Click an element: the page's own click/submit is swallowed and a composer opens anchored to it.
 - Save writes the comment to `chrome.storage.local` under the page's URL bucket, and a numbered
   pin appears on the element. Pins follow scroll and resize.
@@ -58,7 +60,8 @@ npx serve fixtures        # http://localhost:3000/demo.html
 
 | Action | Key |
 | --- | --- |
-| Toggle comment mode | `Alt+C` |
+| Toggle comment mode | `Ctrl+\` |
+| Comment on an element | right-click → "Comment on this element" |
 | Leave comment mode / close card | `Esc` |
 | Save a comment | `⌘/Ctrl+Enter` |
 
@@ -105,5 +108,3 @@ page's hostile CSS, that a click really is cancelled, and that reloading leaves 
   works in Chrome — Firefox's `chrome` alias is callback-only and `await` on it returns
   `undefined`. All runtime API access goes through `browserApi()` in `src/shared/browser.ts`,
   which prefers `globalThis.browser` and falls back to `globalThis.chrome`.
-- Firefox does not honour every `commands.suggested_key`; if `Alt+C` does nothing, rebind it under
-  `about:addons` → gear → Manage Extension Shortcuts.

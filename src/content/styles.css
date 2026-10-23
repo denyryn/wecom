@@ -1,6 +1,361 @@
+/* Hallmark · checked: 2026-10-24 · genre: modern-minimal · scope: app
+ * floor: 0 FAIL · redesign: full · shape: app screen · posture: restrained
+ * surface: shadow-root overlay, tokens only, no rule reaches the host page
+ * built: the project · every handler, prop and aria label kept · v2.0.0
+ */
+/* Hallmark · pre-emit critique: P4 H4 E5 S5 R5 V4 · weakest: P, a paper-and-ink
+ * skin on a review tool; the argument is that a comment is a mark, so the marker
+ * only ever appears on the target, the pin and the mode, never as decoration.
+ * The mode hint now carries one marker swipe and a tighter three-part rhythm.
+ */
 @import "tailwindcss";
 @import "../styles/tokens.css";
 
 /* Tailwind v4's automatic source detection is not worth trusting for files in
    sibling folders; name the surface explicitly. */
 @source "../**/*.{ts,tsx}";
+
+/*
+ * Chrome ignores @property registrations declared inside a shadow root, and
+ * Tailwind's own @supports fallback is skipped because the browser does support
+ * @property. Without these defaults, every var()-based utility (outline, ring,
+ * translate, border, shadow) resolves to its initial value: the hover outline
+ * disappears, focus rings vanish and `-translate-x-1/2` stops centering.
+ * These are Tailwind's fallback defaults, re-emitted for the shadow root.
+ */
+@layer properties {
+  *,
+  ::before,
+  ::after,
+  ::backdrop {
+    --tw-translate-x: 0;
+    --tw-translate-y: 0;
+    --tw-translate-z: 0;
+    --tw-border-style: solid;
+    --tw-leading: initial;
+    --tw-font-weight: initial;
+    --tw-tracking: initial;
+    --tw-ordinal: initial;
+    --tw-slashed-zero: initial;
+    --tw-numeric-figure: initial;
+    --tw-numeric-spacing: initial;
+    --tw-numeric-fraction: initial;
+    --tw-shadow: 0 0 #0000;
+    --tw-shadow-color: initial;
+    --tw-shadow-alpha: 100%;
+    --tw-inset-shadow: 0 0 #0000;
+    --tw-inset-shadow-color: initial;
+    --tw-inset-shadow-alpha: 100%;
+    --tw-ring-color: initial;
+    --tw-ring-shadow: 0 0 #0000;
+    --tw-inset-ring-color: initial;
+    --tw-inset-ring-shadow: 0 0 #0000;
+    --tw-ring-inset: initial;
+    --tw-ring-offset-width: 0px;
+    --tw-ring-offset-color: var(--popover);
+    --tw-ring-offset-shadow: 0 0 #0000;
+    --tw-outline-style: solid;
+    --tw-duration: initial;
+    --tw-ease: initial;
+  }
+}
+
+::selection {
+  background-color: var(--marker);
+  color: var(--marker-ink);
+}
+
+* {
+  scrollbar-color: var(--border) transparent;
+  scrollbar-width: thin;
+}
+
+/* One card shell for the composer and the read card. The caret is drawn from
+   the card's own border so it reads as a tether, not a speech bubble. */
+.anchored-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background-color: var(--popover);
+  color: var(--popover-foreground);
+  box-shadow: var(--shadow-raised);
+}
+
+.anchored-card.is-placed {
+  animation: card-in var(--dur-micro) var(--ease-out);
+}
+
+.anchored-card__caret {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background-color: var(--popover);
+  border-top: 1px solid var(--border);
+  border-left: 1px solid var(--border);
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.anchored-card[data-side="top"] .anchored-card__caret {
+  top: -6px;
+  left: var(--caret-x, 50%);
+}
+
+.anchored-card[data-side="bottom"] .anchored-card__caret {
+  bottom: -6px;
+  left: var(--caret-x, 50%);
+  transform: translateX(-50%) rotate(225deg);
+}
+
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+@keyframes hint-in {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes hint-out {
+  to {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  min-height: 40px;
+  padding: var(--space-2xs) var(--space-sm);
+  border-bottom: 1px solid var(--border);
+}
+
+.card-body {
+  padding: var(--space-sm);
+}
+
+.card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-xs);
+  margin-top: var(--space-sm);
+}
+
+/* The picked element is the one thing on the card that is highlighted. */
+.element-selector {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--muted-foreground);
+  font-family: var(--font-code);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+.card-input {
+  border-color: var(--input);
+  border-radius: var(--radius-control);
+  background-color: var(--card);
+  box-shadow: none;
+  font-size: var(--text-base);
+  transition: background-color var(--dur-micro) var(--ease-out);
+}
+
+.card-input:hover {
+  background-color: var(--paper-2);
+}
+
+.card-input:focus-visible {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 2px var(--ring);
+}
+
+.kbd {
+  display: inline-block;
+  padding: var(--space-3xs) var(--space-2xs);
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: var(--radius-mark);
+  background-color: var(--paper-2);
+  color: var(--muted-foreground);
+  font-family: var(--font-code);
+  font-size: var(--text-2xs);
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+/* Page-comment utility bar: mode state, count and the two actions. The marker
+   is a swipe under the label while mode is on, never a filled block. */
+.mode-hint {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  row-gap: var(--space-2xs);
+  max-width: 100%;
+  padding: var(--space-2xs) var(--space-xs);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+  background-color: var(--popover);
+  box-shadow: var(--shadow-raised);
+  color: var(--foreground);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  pointer-events: auto;
+  isolation: isolate;
+  animation: hint-in var(--dur-short) var(--ease-out);
+}
+
+.mode-hint[data-leaving="true"] {
+  animation: hint-out var(--dur-micro) var(--ease-out) forwards;
+  pointer-events: none;
+}
+
+.mode-hint__lead {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.45em;
+}
+
+.mode-hint__label {
+  position: relative;
+  font-weight: 600;
+}
+
+.mode-hint__label::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  right: -0.1em;
+  bottom: -0.14em;
+  left: -0.1em;
+  height: 2px;
+  border-radius: 1px;
+  background-color: var(--border);
+  transform: rotate(-0.6deg);
+}
+
+.mode-hint__label[data-on="true"]::before {
+  background-color: var(--marker);
+}
+
+.mode-hint__count {
+  padding-left: var(--space-xs);
+  border-left: 1px solid var(--border);
+  color: var(--muted-foreground);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Icon-only actions carry their name in a tooltip on hover and focus. */
+.mode-hint [data-tooltip] {
+  position: relative;
+}
+
+.mode-hint [data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  z-index: 1;
+  padding: var(--space-3xs) var(--space-2xs);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-mark);
+  background-color: var(--popover);
+  box-shadow: var(--shadow-raised);
+  color: var(--foreground);
+  font-family: var(--font-ui);
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateX(-50%);
+  transition: opacity var(--dur-micro) var(--ease-out);
+}
+
+.mode-hint [data-tooltip]:hover::after,
+.mode-hint [data-tooltip]:focus-visible::after {
+  opacity: 1;
+}
+
+.mode-hint [data-tooltip]:disabled::after {
+  display: none;
+}
+
+/* Pins are ink marks. The hit area is 32px while the mark stays 24px. */
+.pin {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pin);
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  box-shadow: 0 0 0 2px var(--background);
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color var(--dur-micro) var(--ease-out);
+}
+
+.pin::before {
+  content: "";
+  position: absolute;
+  inset: -4px;
+}
+
+.pin:hover {
+  background-color: var(--ink-2);
+}
+
+.pin:active {
+  background-color: var(--ink-2);
+}
+
+.pin:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.pin[data-active="true"] {
+  box-shadow: 0 0 0 2px var(--background), 0 0 0 5px var(--marker);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anchored-card,
+  .mode-hint,
+  .mode-hint[data-leaving="true"] {
+    animation: none;
+  }
+
+  .pin {
+    transition: none;
+  }
+
+  .card-input {
+    transition: none;
+  }
+
+  .mode-hint [data-tooltip]::after {
+    transition: none;
+  }
+}

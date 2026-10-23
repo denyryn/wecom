@@ -1,5 +1,8 @@
 import * as React from "react"
+import {Check, Copy, Trash2, TriangleAlert} from "lucide-react"
 import {Badge} from "@/components/ui/badge"
+import {Button} from "@/components/ui/button"
+import {buildExportFrom, copyExport} from "@/shared/export"
 import {buildLocator, resolveLocator} from "@/shared/locator"
 import type {AnchorBox} from "@/shared/position"
 import {newCommentId, type Comment, type Locator} from "@/shared/schema"
@@ -8,7 +11,8 @@ import {Composer} from "./components/Composer"
 import {PinLayer, type Pin} from "./components/PinLayer"
 import {ReadCard} from "./components/ReadCard"
 import {createInspector, describeElement, type HoverTarget} from "./inspect"
-import {onToggleInspect} from "./toggle"
+import {takeContextTarget} from "./context-target"
+import {onCommentElement, onToggleInspect} from "./toggle"
 
 type Mode = "idle" | "inspect"
 
@@ -20,6 +24,16 @@ type Draft = {
 
 type ContentAppProps = {
   host: HTMLElement
+}
+
+/** Same draft the inspector's pick path builds, reused by right-click targeting. */
+function toDraft(element: Element): Draft {
+  const rect = element.getBoundingClientRect()
+  return {
+    locator: buildLocator(element),
+    anchor: {top: rect.top, left: rect.left, width: rect.width, height: rect.height},
+    label: describeElement(element)
+  }
 }
 
 export default function ContentApp({host}: ContentAppProps) {
@@ -56,6 +70,20 @@ export default function ContentApp({host}: ContentAppProps) {
   }, [])
 
   React.useEffect(() => {
+    // Right-click → "Comment on this element". With a tracked target the
+    // composer opens directly; otherwise fall back to arming comment mode.
+    return onCommentElement(() => {
+      const element = takeContextTarget()
+      if (element?.isConnected) {
+        setDraft(toDraft(element))
+        setMode("idle")
+      } else {
+        setMode((current) => (current === "inspect" ? "idle" : "inspect"))
+      }
+    })
+  }, [])
+
+  React.useEffect(() => {
     if (!draft && !activeId) return
 
     // Bubble phase, so an open card's own Escape handling (and the inspector's
@@ -81,12 +109,8 @@ export default function ContentApp({host}: ContentAppProps) {
     const inspector = createInspector({
       host,
       onHover: setHover,
-      onPick: ({element, rect}) => {
-        setDraft({
-          locator: buildLocator(element),
-          anchor: {top: rect.top, left: rect.left, width: rect.width, height: rect.height},
-          label: describeElement(element)
-        })
+      onPick: ({element}) => {
+        setDraft(toDraft(element))
         setMode("idle")
       },
       onCancel: () => setMode("idle")
@@ -161,12 +185,48 @@ export default function ContentApp({host}: ContentAppProps) {
     setActiveId(null)
   }
 
+  const ditchAll = () => {
+    commit([])
+    setActiveId(null)
+    setDraft(null)
+  }
+
+  const showBar = comments.length > 0 || mode === "inspect"
+  const [barMounted, setBarMounted] = React.useState(showBar)
+  const [barLeaving, setBarLeaving] = React.useState(false)
+
+  React.useEffect(() => {
+    if (showBar) {
+      setBarMounted(true)
+      setBarLeaving(false)
+      return
+    }
+    if (!barMounted) return
+
+    // Keep the bar mounted for the exit animation, then unmount.
+    setBarLeaving(true)
+    const timer = window.setTimeout(() => {
+      setBarMounted(false)
+      setBarLeaving(false)
+    }, BAR_EXIT_MS)
+
+    return () => window.clearTimeout(timer)
+  }, [showBar, barMounted])
+
   return (
     <div className="pointer-events-none fixed inset-0 z-[2147483647]">
       {hover ? <Highlight target={hover} /> : null}
       <PinLayer pins={pins} activeId={activeId} onSelect={setActiveId} />
 
-      {mode === "inspect" ? <ModeHint count={comments.length} /> : null}
+      {barMounted ? (
+        <ModeHint
+          count={comments.length}
+          on={mode === "inspect"}
+          leaving={barLeaving}
+          onCopy={() => copyExport(buildExportFrom(comments))}
+          onDitch={ditchAll}
+        />
+      ) : null}
 
       {draft ? (
         <Composer
@@ -227,24 +287,143 @@ function Highlight({target}: {target: HoverTarget}) {
   return (
     <>
       <div
-        className="absolute rounded-sm outline-2 outline-offset-0 outline-primary/80"
+        className="absolute outline-2 outline-offset-1 outline-marker"
         style={{top: rect.top, left: rect.left, width: rect.width, height: rect.height}}
       />
-      <Badge className="absolute max-w-[240px] truncate font-mono text-[11px] shadow-sm" style={{top, left}}>
+      <Badge
+        className="absolute max-w-[240px] truncate rounded-xs px-1.5 py-0.5 font-mono text-[11px] font-normal"
+        style={{top, left}}
+      >
         {label}
       </Badge>
     </>
   )
 }
 
-function ModeHint({count}: {count: number}) {
+const DITCH_CONFIRM_MS = 4000
+const COPY_FEEDBACK_MS = 2000
+const BAR_EXIT_MS = 120 // matches --dur-micro
+
+type ModeHintProps = {
+  count: number
+  on: boolean
+  leaving: boolean
+  onCopy: () => Promise<boolean>
+  onDitch: () => void
+}
+
+function ModeHint({count, on, leaving, onCopy, onDitch}: ModeHintProps) {
+  const [copyState, setCopyState] = React.useState<"copied" | "failed" | null>(null)
+  const [armed, setArmed] = React.useState(false)
+  const alive = React.useRef(true)
+  const copyTimer = React.useRef<number | undefined>(undefined)
+  const armTimer = React.useRef<number | undefined>(undefined)
+
+  React.useEffect(() => {
+    alive.current = true
+    return () => {
+      alive.current = false
+      window.clearTimeout(copyTimer.current)
+      window.clearTimeout(armTimer.current)
+    }
+  }, [])
+
+  const disarm = () => {
+    window.clearTimeout(armTimer.current)
+    setArmed(false)
+  }
+
+  const copy = async () => {
+    disarm()
+    const ok = await onCopy()
+    if (!alive.current) return
+
+    setCopyState(ok ? "copied" : "failed")
+    window.clearTimeout(copyTimer.current)
+    copyTimer.current = window.setTimeout(() => {
+      if (alive.current) setCopyState(null)
+    }, COPY_FEEDBACK_MS)
+  }
+
+  const ditch = () => {
+    if (!armed) {
+      setArmed(true)
+      armTimer.current = window.setTimeout(disarm, DITCH_CONFIRM_MS)
+      return
+    }
+
+    disarm()
+    onDitch()
+  }
+
   return (
-    <div className="absolute left-1/2 top-3 -translate-x-1/2">
-      <div className="flex items-center gap-2 rounded-full border bg-background/95 px-3 py-1.5 text-xs text-foreground shadow-md backdrop-blur">
-        <span className="size-1.5 rounded-full bg-primary" />
-        <span>Comment mode — click an element</span>
-        {count > 0 ? <span className="text-muted-foreground">{count} on this page</span> : null}
-        <kbd className="rounded border bg-muted px-1 font-mono text-[10px] text-muted-foreground">Esc</kbd>
+    <div className="pointer-events-none absolute inset-x-3 top-3 flex justify-center">
+      <div className="mode-hint" data-leaving={leaving ? "true" : "false"}>
+        <span className="mode-hint__lead">
+          <span className="mode-hint__label" data-on={on}>
+            Comment mode
+          </span>
+          <span className="sr-only">{on ? "on" : "off"}</span>
+        </span>
+
+        <span className="mode-hint__count" aria-label={`${count} on this page`}>
+          {count}
+        </span>
+
+        <Button
+          variant="ghost"
+          size="icon-xs"
+          className={
+            copyState === "failed"
+              ? "rounded-sm text-destructive"
+              : "rounded-sm text-muted-foreground"
+          }
+          data-tooltip={
+            copyState === "copied" ? "Copied" : copyState === "failed" ? "Copy failed" : "Copy JSON"
+          }
+          aria-label={
+            copyState === "copied" ? "Copied" : copyState === "failed" ? "Copy failed" : "Copy JSON"
+          }
+          disabled={count === 0}
+          onClick={copy}
+        >
+          {copyState === "copied" ? (
+            <Check />
+          ) : copyState === "failed" ? (
+            <TriangleAlert />
+          ) : (
+            <Copy />
+          )}
+        </Button>
+
+        <Button
+          variant={armed ? "destructive" : "ghost"}
+          size="icon-xs"
+          className={
+            armed
+              ? "rounded-sm"
+              : "rounded-sm text-destructive hover:bg-destructive/10 hover:text-destructive"
+          }
+          data-tooltip={armed ? "Confirm ditch all" : "Ditch all"}
+          aria-label={armed ? "Confirm ditch all" : "Ditch all comments"}
+          onClick={ditch}
+          onBlur={disarm}
+          disabled={count === 0}
+        >
+          <Trash2 />
+        </Button>
+
+        {on ? <kbd className="kbd">Esc</kbd> : null}
+
+        <span role="status" className="sr-only">
+          {armed
+            ? "Click again to ditch all comments"
+            : copyState === "copied"
+              ? "Copied"
+              : copyState === "failed"
+                ? "Copy failed"
+                : ""}
+        </span>
       </div>
     </div>
   )

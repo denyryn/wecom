@@ -23,17 +23,10 @@
   "action": {
     "default_popup": "popup/index.html"
   },
-  "commands": {
-    "toggle-inspect": {
-      "suggested_key": {
-        "default": "Alt+C"
-      },
-      "description": "Toggle comment mode"
-    }
-  },
   "permissions": [
     "storage",
-    "scripting"
+    "scripting",
+    "contextMenus"
   ],
   "host_permissions": [
     "<all_urls>"

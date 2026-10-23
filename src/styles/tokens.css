@@ -1,3 +1,14 @@
+/* Hallmark · checked: 2026-10-24 · genre: modern-minimal · scope: app
+ * floor: 0 FAIL · redesign: full · shape: app screen · posture: restrained
+ * theme: custom, annotation ink (by request) · system: warm paper, logo black
+ * built: the project · every handler, prop and aria label kept · v2.0.0
+ */
+/* Hallmark · pre-emit critique: P4 H4 E5 S5 R5 V4 · weakest: P, a paper-and-ink
+ * skin on a review tool; the argument is that a comment is a mark, so the marker
+ * only ever appears on the target, the pin and the mode, never as decoration.
+ * Radius is now one step per nesting level, from mark to card, so nesting reads
+ * concentric instead of accidental.
+ */
 /*
  * Design tokens for every surface (content overlay + popup).
  *
@@ -26,11 +37,17 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-marker: var(--marker);
+  --color-marker-ink: var(--marker-ink);
 
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --font-sans: var(--font-ui);
+  --font-mono: var(--font-code);
+
+  --radius-xs: var(--radius-mark);
+  --radius-sm: var(--radius-inner);
+  --radius-md: var(--radius-control);
+  --radius-lg: var(--radius-panel);
+  --radius-xl: var(--radius-card);
 }
 
 /*
@@ -42,24 +59,76 @@
 
 :root,
 :host {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  /* Face: the system UI stack keeps the extension working offline. */
+  --font-ui: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-code: ui-monospace, "SFMono-Regular", "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
+
+  /* Paper and ink: warm neutrals sampled off the hand-drawn logo. */
+  --background: oklch(0.972 0.009 82);
+  --foreground: oklch(0.2 0.012 70);
+  --card: oklch(0.988 0.005 82);
+  --card-foreground: oklch(0.2 0.012 70);
+  --popover: oklch(0.988 0.005 82);
+  --popover-foreground: oklch(0.2 0.012 70);
+  --primary: oklch(0.235 0.012 70);
+  --primary-foreground: oklch(0.985 0.005 82);
+  --secondary: oklch(0.938 0.01 82);
+  --secondary-foreground: oklch(0.24 0.012 70);
+  --muted: oklch(0.944 0.01 82);
+  --muted-foreground: oklch(0.455 0.014 72);
+  --accent: oklch(0.938 0.012 82);
+  --accent-foreground: oklch(0.2 0.012 70);
+  --destructive: oklch(0.505 0.17 27);
+  --destructive-foreground: oklch(0.985 0.005 82);
+  --border: oklch(0.885 0.01 82);
+  --input: oklch(0.62 0.014 76);
+  --ring: oklch(0.235 0.012 70);
+
+  /* One highlighter, only where a mark is being made. */
+  --marker: oklch(0.845 0.165 92);
+  --marker-ink: oklch(0.235 0.02 80);
+
+  /* Depth: a hairline plus one low shadow; no glows. */
+  --paper-2: oklch(0.945 0.01 82);
+  --paper-3: oklch(0.92 0.012 82);
+  --ink-2: oklch(0.3 0.012 70);
+  --shadow-raised: 0 8px 16px -8px oklch(0.2 0.02 70 / 0.28);
+
+  /* Radius: one step per nesting level, never a derivation.
+     mark 4 · inner 6 · control 8 · panel 10 · card 12.
+     A nested radius is its parent minus the inset: the segmented track is 8
+     and pads 2, so its selected item is 6. Pins are circles, the one exception. */
+  --radius-mark: 4px;
+  --radius-inner: 6px;
+  --radius-control: 8px;
+  --radius-panel: 10px;
+  --radius-card: 12px;
+  --radius-pin: 999px;
+
+  /* Spacing: the 4px scale used by the utilities and the local CSS. */
+  --space-3xs: 2px;
+  --space-2xs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 40px;
+
+  /* Motion: state only, never decoration. */
+  --dur-micro: 120ms;
+  --dur-short: 160ms;
+  --ease-out: cubic-bezier(0.2, 0, 0, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+
+  /* App type scale, ratio 1.125. */
+  --text-2xs: 0.625rem;
+  --text-xs: 0.6875rem;
+  --text-sm: 0.75rem;
+  --text-base: 0.8125rem;
+  --text-md: 0.875rem;
+  --text-lg: 1rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.75rem;
 }

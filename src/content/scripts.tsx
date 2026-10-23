@@ -1,6 +1,8 @@
 import ReactDOM from "react-dom/client"
 import ContentApp from "./ContentApp"
-import {emitToggleInspect} from "./toggle"
+import {trackContextTarget} from "./context-target"
+import {trackToggleHotkey} from "./hotkey"
+import {emitCommentElement, emitToggleInspect} from "./toggle"
 import {browserApi} from "@/shared/browser"
 
 /**
@@ -20,6 +22,8 @@ export default function initial() {
   // `div { opacity: .8 }` still hit the host without this.
   host.style.cssText = "all: initial !important"
   document.body.appendChild(host)
+  const stopTrackingContext = trackContextTarget(host)
+  const stopHotkey = trackToggleHotkey()
 
   const shadowRoot = host.attachShadow({mode: "open"})
   const styleElement = document.createElement("style")
@@ -38,12 +42,16 @@ export default function initial() {
   mountingPoint.render(<ContentApp host={host} />)
 
   const onMessage = (message: unknown) => {
-    if ((message as {type?: string} | null)?.type === "toggle-inspect") emitToggleInspect()
+    const type = (message as {type?: string} | null)?.type
+    if (type === "toggle-inspect") emitToggleInspect()
+    if (type === "comment-element") emitCommentElement()
   }
   browserApi().runtime.onMessage.addListener(onMessage)
 
   return () => {
     browserApi().runtime.onMessage.removeListener(onMessage)
+    stopTrackingContext()
+    stopHotkey()
     mountingPoint.unmount()
     host.remove()
   }

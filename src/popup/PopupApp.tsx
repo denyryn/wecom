@@ -4,6 +4,7 @@ import {Button} from "@/components/ui/button"
 import {buildExport, copyExport, downloadExport} from "@/shared/export"
 import {EXPORT_DETAILS, type ExportDetail} from "@/shared/schema"
 import {clearComments, loadAllComments, loadComments, urlKey} from "@/shared/storage"
+import {attachAndSend} from "@/shared/messaging"
 import {browserApi} from "@/shared/browser"
 
 const CLEAR_CONFIRM_MS = 4000
@@ -63,22 +64,14 @@ export default function PopupApp() {
     }
 
     try {
-      await sendToggle(tab.id)
+      await attachAndSend(tab.id, {type: "toggle-inspect"})
     } catch {
-      // No listener means the tab was opened before the extension was installed
-      // or reloaded. Injecting on demand is the difference between "reload the
-      // page" and "just works".
-      try {
-        await injectContentScript(tab.id)
-        await sendToggle(tab.id)
-      } catch {
-        setNote(
-          isRestricted(tab.url)
-            ? "This page does not allow extensions."
-            : "Could not attach to this page. Reload it, then try again."
-        )
-        return
-      }
+      setNote(
+        isRestricted(tab.url)
+          ? "This page does not allow extensions."
+          : "Could not attach to this page. Reload it, then try again."
+      )
+      return
     }
 
     window.close()
@@ -107,83 +100,120 @@ export default function PopupApp() {
     await refresh(tab)
   }
 
-  const countLabel =
-    !tab?.url
-      ? "This page is not readable from the popup."
-      : count === null
-        ? "Loading…"
-        : count === 1
-          ? "1 comment on this page"
-          : `${count} comments on this page`
-
   return (
     <main className="flex flex-col gap-3 p-4">
-      <div>
-        <h1 className="text-sm font-semibold">Web UI Commentator</h1>
-        <p className="mt-1 text-xs text-muted-foreground">
+      <header className="flex flex-col gap-1">
+        <h1 className="text-[14px] font-semibold leading-tight tracking-[-0.01em]">
+          Web UI Commentator
+        </h1>
+        <p className="text-[11px] leading-snug text-muted-foreground">
           Click an element, leave a note, export JSON an agent can act on.
         </p>
-      </div>
+      </header>
 
-      <p className="text-xs text-muted-foreground">{countLabel}</p>
+      <section
+        aria-label="Comments on this page"
+        className="border-y border-border py-3"
+      >
+        {!tab?.url ? (
+          <p className="flex min-h-9 items-center text-[11px] leading-snug text-muted-foreground">
+            This page is not readable from the popup.
+          </p>
+        ) : count === null ? (
+          <p className="flex min-h-9 items-center text-[11px] text-muted-foreground">Loading…</p>
+        ) : (
+          <div className="flex min-h-9 items-baseline gap-2">
+            <span className="text-[30px] leading-none font-semibold tracking-[-0.02em] tabular-nums">
+              {count}
+            </span>
+            <span className="text-[12px] leading-snug text-muted-foreground">
+              {count === 1 ? "comment on this page" : "comments on this page"}
+            </span>
+          </div>
+        )}
+      </section>
 
-      <div className="flex flex-col gap-2">
-        <Button onClick={toggle} className="w-full">
-          <MessageSquarePlus />
-          Comment mode
-        </Button>
+      <Button onClick={toggle} className="w-full">
+        <MessageSquarePlus />
+        Comment mode
+      </Button>
 
-        <div className="flex gap-2">
-          <span className="self-center text-xs text-muted-foreground">Detail</span>
+      {note ? (
+        <p role="alert" className="text-[11px] leading-snug text-destructive">
+          {note}
+        </p>
+      ) : null}
+
+      <div className="flex flex-col gap-1.5">
+        <span id="export-detail" className="text-[11px] text-muted-foreground">
+          Export detail
+        </span>
+        <div
+          role="group"
+          aria-labelledby="export-detail"
+          className="grid grid-cols-3 gap-0.5 rounded-md border border-border bg-muted p-0.5"
+        >
           {EXPORT_DETAILS.map((value) => (
             <Button
               key={value}
-              variant={detail === value ? "default" : "outline"}
+              variant="ghost"
               size="sm"
               aria-pressed={detail === value}
-              className="flex-1"
+              className="h-8 rounded-sm border border-transparent px-0 text-[12px] font-normal capitalize focus-visible:ring-offset-0 aria-pressed:border-border aria-pressed:bg-card aria-pressed:font-medium aria-pressed:text-foreground"
               onClick={() => setDetail(value)}
             >
               {value}
             </Button>
           ))}
         </div>
+      </div>
 
-        <div className="flex gap-2">
-          <Button variant="outline" className="flex-1" onClick={copy}>
-            {copyState === "copied" ? <Check /> : <Copy />}
-            Copy JSON
-          </Button>
-          <Button variant="outline" className="flex-1" onClick={download}>
-            <Download />
-            Download JSON
-          </Button>
-        </div>
-
-        <Button
-          variant={armed ? "destructive" : "outline"}
-          className="w-full"
-          disabled={!count}
-          onClick={clearPage}
-          onBlur={disarm}
-        >
-          <Trash2 />
-          {armed ? "Confirm clear" : "Clear this page"}
+      <div className="grid grid-cols-2 gap-2">
+        <Button variant="outline" onClick={copy}>
+          {copyState === "copied" ? <Check /> : <Copy />}
+          Copy JSON
+        </Button>
+        <Button variant="outline" onClick={download}>
+          <Download />
+          Download JSON
         </Button>
       </div>
 
-      {copyState ? (
-        <p className="text-xs text-muted-foreground">
-          {copyState === "copied" ? "Copied." : "Copy failed."}
-        </p>
-      ) : null}
-      {note ? <p className="text-xs text-destructive">{note}</p> : null}
-
-      <p className="text-xs text-muted-foreground">
-        {total ?? "…"} across all pages ·{" "}
-        <kbd className="rounded border bg-muted px-1 font-mono text-[10px]">Alt+C</kbd> toggles
-        comment mode
+      <p
+        role="status"
+        className={
+          copyState === "failed"
+            ? "min-h-[1lh] text-[11px] text-destructive"
+            : "min-h-[1lh] text-[11px] text-muted-foreground"
+        }
+      >
+        {copyState === "copied" ? "Copied." : copyState === "failed" ? "Copy failed." : ""}
       </p>
+
+      <Button
+        variant={armed ? "destructive" : "ghost"}
+        className={
+          armed
+            ? "w-full"
+            : "w-full text-destructive hover:bg-destructive/10 hover:text-destructive"
+        }
+        disabled={!count}
+        onClick={clearPage}
+        onBlur={disarm}
+      >
+        <Trash2 />
+        {armed ? "Confirm clear" : "Clear this page"}
+      </Button>
+
+      <footer className="flex flex-col gap-1 border-t border-border pt-3">
+        <p className="text-[11px] text-muted-foreground">
+          {total === 1 ? "1 comment" : `${total ?? "…"} comments`} across all pages
+        </p>
+        <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+          <kbd className="kbd">Ctrl+\</kbd>
+          <span>toggles comment mode</span>
+        </p>
+      </footer>
     </main>
   )
 }
@@ -196,17 +226,4 @@ function isRestricted(url?: string): boolean {
     RESTRICTED_URL.test(url) ||
     url.startsWith("https://chromewebstore.google.com")
   )
-}
-
-function sendToggle(tabId: number): Promise<void> {
-  return browserApi().tabs.sendMessage(tabId, {type: "toggle-inspect"})
-}
-
-async function injectContentScript(tabId: number): Promise<void> {
-  const files = (browserApi().runtime.getManifest().content_scripts ?? []).flatMap(
-    (entry) => entry.js ?? []
-  )
-  if (files.length === 0) throw new Error("no content script declared")
-
-  await browserApi().scripting.executeScript({target: {tabId}, files})
 }

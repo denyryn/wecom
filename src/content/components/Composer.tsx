@@ -36,23 +36,24 @@ export function Composer({anchor, label, onSubmit, onCancel}: ComposerProps) {
 
   return (
     <AnchoredCard anchor={anchor} onKeyDown={onKeyDown}>
-      <div className="border-b px-3 py-2">
-        <span className="block truncate font-mono text-[11px] text-muted-foreground">{label}</span>
+      <div className="card-head">
+        <span className="element-selector">{label}</span>
       </div>
 
-      <div className="p-3">
+      <div className="card-body">
         <Textarea
           autoFocus
+          aria-label="Comment"
           value={value}
           rows={3}
           placeholder="What should change here?"
           onChange={(event) => setValue(event.target.value)}
-          className="resize-none text-[13px]"
+          className="card-input min-h-20 resize-none leading-relaxed"
         />
 
-        <div className="mt-2 flex items-center justify-between">
-          <span className="text-[11px] text-muted-foreground">⌘/Ctrl+Enter</span>
-          <div className="flex gap-1">
+        <div className="card-foot">
+          <kbd className="kbd">⌘/Ctrl+Enter</kbd>
+          <div className="flex items-center gap-1">
             <Button
               size="icon-sm"
               variant="ghost"

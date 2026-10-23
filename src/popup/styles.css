@@ -1,12 +1,56 @@
+/* Hallmark · checked: 2026-10-24 · genre: modern-minimal · scope: app
+ * floor: 0 FAIL · redesign: full · shape: app screen · posture: restrained
+ * surface: 320px browser popup, system face only so it works offline
+ * built: the project · every handler, prop and aria label kept · v2.0.0
+ */
+/* Hallmark · pre-emit critique: P4 H4 E5 S5 R5 V4 · weakest: P, a paper-and-ink
+ * skin on a review tool; the argument is that a comment is a mark, so the marker
+ * only ever appears on the target, the pin and the mode, never as decoration.
+ * The radius scale is a deliberate ladder now, so the popup's nesting reads
+ * concentric instead of square.
+ */
 @import "tailwindcss";
 @import "../styles/tokens.css";
 
 @source "../**/*.{ts,tsx}";
 
+html,
+body {
+  overflow-x: clip;
+}
+
 body {
   margin: 0;
   width: 320px;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  color: var(--foreground);
   background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-ui);
+  font-size: var(--text-base);
+  line-height: 1.5;
+  caret-color: var(--foreground);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background-color: var(--marker);
+  color: var(--marker-ink);
+}
+
+* {
+  scrollbar-color: var(--border) transparent;
+  scrollbar-width: thin;
+}
+
+.kbd {
+  display: inline-block;
+  padding: var(--space-3xs) var(--space-2xs);
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: var(--radius-mark);
+  background-color: var(--paper-2);
+  color: var(--muted-foreground);
+  font-family: var(--font-code);
+  font-size: var(--text-2xs);
+  line-height: 1.4;
+  white-space: nowrap;
 }

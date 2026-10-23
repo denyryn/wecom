@@ -1,7 +1,7 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
-import {projectComment, serializeExport} from "@/shared/export"
+import {buildExportFrom, projectComment, serializeExport} from "@/shared/export"
 import {buildLocator, resolveLocator} from "@/shared/locator"
-import type {Comment} from "@/shared/schema"
+import {SCHEMA_VERSION, type Comment} from "@/shared/schema"
 import {placeCard} from "@/shared/position"
 import {urlKey, watchComments} from "@/shared/storage"
 
@@ -197,6 +197,26 @@ describe("serializeExport", () => {
     })
 
     expect(output).not.toContain("\n")
+  })
+})
+
+describe("buildExportFrom", () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  it("exports only the given comments at medium detail without mutating them", () => {
+    vi.stubGlobal("chrome", {runtime: {getManifest: () => ({version: "9.9.9"})}})
+    const second = {...fullComment, id: "second"} as Comment
+
+    const doc = buildExportFrom([fullComment, second])
+
+    expect(doc.schemaVersion).toBe(SCHEMA_VERSION)
+    expect(doc.detail).toBe("medium")
+    expect(doc.extensionVersion).toBe("9.9.9")
+    expect(doc.comments.map((comment) => comment.id)).toEqual([fullComment.id, "second"])
+    expect(doc.comments[0]).not.toHaveProperty("target.domPath")
+    expect(fullComment.target).toHaveProperty("domPath")
+    expect(fullComment.target).toHaveProperty("domIndex")
+    expect(fullComment.target).toHaveProperty("ancestors")
   })
 })
 
