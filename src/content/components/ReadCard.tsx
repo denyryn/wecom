@@ -1,4 +1,5 @@
 import * as React from "react"
+import {Check, Pencil, Trash2, X} from "lucide-react"
 import {Button} from "@/components/ui/button"
 import {Textarea} from "@/components/ui/textarea"
 import type {AnchorBox} from "@/shared/position"
@@ -36,6 +37,7 @@ export function ReadCard({comment, anchor, onSave, onDelete, onClose}: ReadCardP
       event.preventDefault()
       event.stopPropagation()
       if (editing) setEditing(false)
+      else if (confirming) setConfirming(false)
       else onClose()
       return
     }
@@ -48,10 +50,19 @@ export function ReadCard({comment, anchor, onSave, onDelete, onClose}: ReadCardP
 
   return (
     <AnchoredCard anchor={anchor} onKeyDown={onKeyDown}>
-      <div className="border-b px-3 py-2">
-        <span className="block truncate font-mono text-[11px] text-muted-foreground">
+      <div className="flex items-center gap-2 border-b px-3 py-2">
+        <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-muted-foreground">
           {comment.target.selector}
         </span>
+        <Button
+          size="icon-xs"
+          variant="ghost"
+          aria-label="Close comment"
+          title="Close"
+          onClick={onClose}
+        >
+          <X />
+        </Button>
       </div>
 
       <div className="p-3">
@@ -76,25 +87,46 @@ export function ReadCard({comment, anchor, onSave, onDelete, onClose}: ReadCardP
 
           {editing ? (
             <div className="flex gap-1">
-              <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>
-                Cancel
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                aria-label="Discard edit"
+                title="Discard"
+                onClick={() => setEditing(false)}
+              >
+                <X />
               </Button>
-              <Button size="sm" onClick={save} disabled={!value.trim()}>
-                Save
+              <Button
+                size="icon-sm"
+                aria-label="Save comment"
+                title="Save"
+                onClick={save}
+                disabled={!value.trim()}
+              >
+                <Check />
               </Button>
             </div>
           ) : (
             <div className="flex gap-1">
               <Button
-                size="sm"
-                variant="ghost"
-                className="text-destructive hover:text-destructive"
+                size={confirming ? "sm" : "icon-sm"}
+                variant={confirming ? "destructive" : "ghost"}
+                aria-label={confirming ? "Confirm delete comment" : "Delete comment"}
+                title={confirming ? "Confirm delete" : "Delete"}
+                className={confirming ? undefined : "text-destructive hover:text-destructive"}
                 onClick={() => (confirming ? onDelete() : setConfirming(true))}
               >
-                {confirming ? "Confirm delete" : "Delete"}
+                <Trash2 />
+                {confirming ? "Confirm" : null}
               </Button>
-              <Button size="sm" variant="ghost" onClick={() => setEditing(true)}>
-                Edit
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                aria-label="Edit comment"
+                title="Edit"
+                onClick={() => setEditing(true)}
+              >
+                <Pencil />
               </Button>
             </div>
           )}

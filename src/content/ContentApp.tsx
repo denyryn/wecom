@@ -56,6 +56,23 @@ export default function ContentApp({host}: ContentAppProps) {
   }, [])
 
   React.useEffect(() => {
+    if (!draft && !activeId) return
+
+    // Bubble phase, so an open card's own Escape handling (and the inspector's
+    // capture-phase handler) gets the first say.
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return
+      event.preventDefault()
+      event.stopPropagation()
+      if (draft) setDraft(null)
+      else setActiveId(null)
+    }
+
+    document.addEventListener("keydown", onKeyDown)
+    return () => document.removeEventListener("keydown", onKeyDown)
+  }, [draft, activeId])
+
+  React.useEffect(() => {
     if (mode !== "inspect") {
       setHover(null)
       return

@@ -1,4 +1,5 @@
 import * as React from "react"
+import {Check, Copy, Download, MessageSquarePlus, Trash2} from "lucide-react"
 import {Button} from "@/components/ui/button"
 import {buildExport, copyExport, downloadExport} from "@/shared/export"
 import {EXPORT_DETAILS, type ExportDetail} from "@/shared/schema"
@@ -128,6 +129,7 @@ export default function PopupApp() {
 
       <div className="flex flex-col gap-2">
         <Button onClick={toggle} className="w-full">
+          <MessageSquarePlus />
           Comment mode
         </Button>
 
@@ -149,9 +151,11 @@ export default function PopupApp() {
 
         <div className="flex gap-2">
           <Button variant="outline" className="flex-1" onClick={copy}>
+            {copyState === "copied" ? <Check /> : <Copy />}
             Copy JSON
           </Button>
           <Button variant="outline" className="flex-1" onClick={download}>
+            <Download />
             Download JSON
           </Button>
         </div>
@@ -163,6 +167,7 @@ export default function PopupApp() {
           onClick={clearPage}
           onBlur={disarm}
         >
+          <Trash2 />
           {armed ? "Confirm clear" : "Clear this page"}
         </Button>
       </div>

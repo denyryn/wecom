@@ -1,4 +1,5 @@
 import * as React from "react"
+import {Send, X} from "lucide-react"
 import {Button} from "@/components/ui/button"
 import {Textarea} from "@/components/ui/textarea"
 import type {AnchorBox} from "@/shared/position"
@@ -52,11 +53,23 @@ export function Composer({anchor, label, onSubmit, onCancel}: ComposerProps) {
         <div className="mt-2 flex items-center justify-between">
           <span className="text-[11px] text-muted-foreground">⌘/Ctrl+Enter</span>
           <div className="flex gap-1">
-            <Button size="sm" variant="ghost" onClick={onCancel}>
-              Cancel
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              aria-label="Discard comment"
+              title="Discard"
+              onClick={onCancel}
+            >
+              <X />
             </Button>
-            <Button size="sm" onClick={submit} disabled={!value.trim()}>
-              Comment
+            <Button
+              size="icon-sm"
+              aria-label="Add comment"
+              title="Add comment"
+              onClick={submit}
+              disabled={!value.trim()}
+            >
+              <Send />
             </Button>
           </div>
         </div>
