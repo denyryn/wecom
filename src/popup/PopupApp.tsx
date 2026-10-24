@@ -3,7 +3,7 @@ import {Check, Copy, Download, MessageSquarePlus, Trash2} from "lucide-react"
 import {Button} from "@/components/ui/button"
 import {buildExport, copyExport, downloadExport} from "@/shared/export"
 import {EXPORT_DETAILS, type ExportDetail} from "@/shared/schema"
-import {clearComments, loadAllComments, loadComments, urlKey} from "@/shared/storage"
+import {clearComments, loadAllComments, loadComments, loadExportDetail, saveExportDetail, urlKey} from "@/shared/storage"
 import {attachAndSend} from "@/shared/messaging"
 import {browserApi} from "@/shared/browser"
 
@@ -40,10 +40,16 @@ export default function PopupApp() {
     alive.current = true
 
     void (async () => {
-      const [active] = await browserApi().tabs.query({active: true, currentWindow: true})
+      const [tabs, savedDetail] = await Promise.all([
+        browserApi().tabs.query({active: true, currentWindow: true}),
+        loadExportDetail()
+      ])
       if (!alive.current) return
-      setTab(active ?? null)
-      await refresh(active ?? null)
+
+      const active = tabs[0] ?? null
+      setTab(active)
+      setDetail(savedDetail)
+      await refresh(active)
     })()
     return () => {
       alive.current = false
@@ -160,7 +166,10 @@ export default function PopupApp() {
               size="sm"
               aria-pressed={detail === value}
               className="h-8 rounded-sm border border-transparent px-0 text-[12px] font-normal capitalize focus-visible:ring-offset-0 aria-pressed:border-border aria-pressed:bg-card aria-pressed:font-medium aria-pressed:text-foreground"
-              onClick={() => setDetail(value)}
+              onClick={() => {
+                setDetail(value)
+                saveExportDetail(value).catch(() => {})
+              }}
             >
               {value}
             </Button>

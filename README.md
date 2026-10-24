@@ -69,7 +69,7 @@ Use this while hacking on the extension itself; reloading on save is automatic.
    the page dims and elements highlight as you hover.
 2. **Click the thing you want changed.** A small card opens, anchored to that element.
 3. Type what you want. <kbd>Ctrl</kbd>+<kbd>Enter</kbd> saves. A numbered pin appears.
-4. Click the toolbar icon → pick an export detail → **Copy JSON**.
+4. Click the toolbar icon → pick an export detail (remembered) → **Copy JSON**.
 5. Paste it to your agent along with the prompt below.
 
 Click a pin any time to reread, edit, or delete that comment.
@@ -95,7 +95,8 @@ Click the extension icon to see:
 
 - How many comments are on the page you're looking at, and how many you have overall.
 - **Comment mode** toggle, for when you'd rather click than type.
-- **Export detail** — `light` / `medium` / `heavy` (see below).
+- **Export detail** — `light` / `medium` / `heavy` (see below). Remembered between popups, and
+  the copy button on the in-page bar uses the same level.
 - **Copy JSON** / **Download JSON** — everything, every page, one document.
 - **Clear this page** — removes this page's comments (asks you to click twice — no accidents).
 

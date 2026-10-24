@@ -6,7 +6,7 @@ import {buildExportFrom, copyExport} from "@/shared/export"
 import {buildLocator, resolveLocator} from "@/shared/locator"
 import type {AnchorBox} from "@/shared/position"
 import {newCommentId, type Comment, type Locator} from "@/shared/schema"
-import {loadComments, saveComments, urlKey, watchComments} from "@/shared/storage"
+import {loadComments, loadExportDetail, saveComments, urlKey, watchComments} from "@/shared/storage"
 import {Composer} from "./components/Composer"
 import {PinLayer, type Pin} from "./components/PinLayer"
 import {ReadCard} from "./components/ReadCard"
@@ -223,7 +223,7 @@ export default function ContentApp({host}: ContentAppProps) {
           count={comments.length}
           on={mode === "inspect"}
           leaving={barLeaving}
-          onCopy={() => copyExport(buildExportFrom(comments))}
+          onCopy={async () => copyExport(buildExportFrom(comments, await loadExportDetail()))}
           onDitch={ditchAll}
         />
       ) : null}

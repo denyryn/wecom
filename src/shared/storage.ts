@@ -1,7 +1,9 @@
-import type {Comment} from "./schema"
+import type {Comment, ExportDetail} from "./schema"
+import {EXPORT_DETAILS} from "./schema"
 import {browserApi} from "@/shared/browser"
 
 const PAGES_KEY = "pages"
+const DETAIL_KEY = "exportDetail"
 
 type Pages = Record<string, Comment[]>
 
@@ -41,6 +43,21 @@ export async function clearComments(pageKey: string): Promise<void> {
   delete pages[pageKey]
 
   await browserApi().storage.local.set({[PAGES_KEY]: pages})
+}
+
+/**
+ * Export detail is a user setting; a stale or hand-edited value must not break
+ * the export, so unknown values fall back to the default.
+ */
+export async function loadExportDetail(): Promise<ExportDetail> {
+  const stored = await browserApi().storage.local.get(DETAIL_KEY)
+  const value = stored[DETAIL_KEY]
+
+  return EXPORT_DETAILS.includes(value as ExportDetail) ? (value as ExportDetail) : "medium"
+}
+
+export async function saveExportDetail(detail: ExportDetail): Promise<void> {
+  await browserApi().storage.local.set({[DETAIL_KEY]: detail})
 }
 
 /**

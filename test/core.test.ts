@@ -3,7 +3,7 @@ import {buildExportFrom, projectComment, serializeExport} from "@/shared/export"
 import {buildLocator, resolveLocator} from "@/shared/locator"
 import {SCHEMA_VERSION, type Comment} from "@/shared/schema"
 import {placeCard} from "@/shared/position"
-import {urlKey, watchComments} from "@/shared/storage"
+import {loadExportDetail, saveExportDetail, urlKey, watchComments} from "@/shared/storage"
 
 const viewport = {width: 1000, height: 800}
 const card = {width: 320, height: 180}
@@ -271,5 +271,37 @@ describe("watchComments", () => {
 
     stop()
     expect(listeners).toHaveLength(0)
+  })
+})
+
+describe("export detail preference", () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  function stubChrome(initial: Record<string, unknown> = {}) {
+    const data = {...initial}
+    vi.stubGlobal("chrome", {
+      storage: {
+        local: {
+          get: async (key: string) => ({[key]: data[key]}),
+          set: async (items: Record<string, unknown>) => Object.assign(data, items)
+        }
+      }
+    })
+    return data
+  }
+
+  it("falls back to medium when nothing is stored", async () => {
+    stubChrome()
+    expect(await loadExportDetail()).toBe("medium")
+  })
+
+  it("round-trips a saved level and rejects junk", async () => {
+    const data = stubChrome()
+    await saveExportDetail("heavy")
+    expect(data.exportDetail).toBe("heavy")
+    expect(await loadExportDetail()).toBe("heavy")
+
+    data.exportDetail = "extreme"
+    expect(await loadExportDetail()).toBe("medium")
   })
 })
