@@ -3,6 +3,7 @@ import ContentApp from "./ContentApp"
 import {trackContextTarget} from "./context-target"
 import {trackToggleHotkey} from "./hotkey"
 import {emitCommentElement, emitToggleInspect} from "./toggle"
+import {copyAllJson, ditchPage} from "./page-actions"
 import {browserApi} from "@/shared/browser"
 
 /**
@@ -45,6 +46,8 @@ export default function initial() {
     const type = (message as {type?: string} | null)?.type
     if (type === "toggle-inspect") emitToggleInspect()
     if (type === "comment-element") emitCommentElement()
+    if (type === "copy-json") void copyAllJson().catch(() => {})
+    if (type === "ditch-page") void ditchPage().catch(() => {})
   }
   browserApi().runtime.onMessage.addListener(onMessage)
 

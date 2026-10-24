@@ -76,16 +76,19 @@ Click a pin any time to reread, edit, or delete that comment.
 
 ### Painless alternatives to the hotkey
 
-- **Right-click** anything → **Comment on this element**. The card opens straight on it.
-  Great for elements that are hard to click cleanly (links, tiny icons).
+- **Right-click** anything → **Wecom utility** → **Comment on this element**. The card opens
+  straight on it. Great for elements that are hard to click cleanly (links, tiny icons).
 - **Toolbar icon → Comment mode** does the same thing as the hotkey.
+- The same submenu carries the whole page workflow: **Toggle comment mode**, **Copy JSON**
+  (every page, same document as the popup), and **Ditch all on this page** (asks once in a
+  native confirm before deleting).
 
 ### Keys
 
 | Action | Shortcut |
 | --- | --- |
 | Turn comment mode on / off | <kbd>Ctrl</kbd>+<kbd>\\</kbd> |
-| Comment on an element | right-click → *Comment on this element* |
+| Comment on an element | right-click → *Wecom utility* → *Comment on this element* |
 | Save the comment | <kbd>Ctrl</kbd>+<kbd>Enter</kbd> (or <kbd>⌘</kbd>+<kbd>Enter</kbd>) |
 | Exit comment mode / close the card | <kbd>Esc</kbd> |
 
@@ -167,8 +170,8 @@ open late (a modal, an SPA route change) may need a page reload before the exten
 
 **The card opens on the wrong element**
 Some sites rebuild the DOM constantly, so very fast clicks can land a frame behind. Click the
-pin and delete, then use right-click → *Comment on this element* instead, which targets after
-the page settles.
+pin and delete, then use right-click → *Wecom utility* → *Comment on this element* instead, which
+targets after the page settles.
 
 **My comments are gone after a reload**
 Check the URL path. Comments are bucketed by `origin + pathname`, so `/app` and `/app/index.html`
@@ -200,7 +203,7 @@ npm run build          # production build -> dist/chromium
 npm run build:chrome   # Chrome build + store zip in dist/
 npm run build:firefox  # Firefox gecko build + zip in dist/
 npm run build:edge     # Edge build
-npm test               # vitest, 26 tests
+npm test               # vitest, 33 tests
 npx tsc --noEmit       # type check
 ```
 
@@ -251,9 +254,9 @@ has no pin; it is still present in the export.
 
 ### Verification status
 
-`npx tsc --noEmit` is clean and `npm test` passes 26 tests (card placement, locator
+`npx tsc --noEmit` is clean and `npm test` passes 33 tests (card placement, locator
 build/resolve, `urlKey`, storage watch, export projection, right-click targeting, hotkey
-matching). `npm run build` produces ~540 KB in `dist/chromium`.
+matching, context-menu copy and clear). `npm run build` produces ~540 KB in `dist/chromium`.
 
 Build-level proofs, checked against `dist/chrome` and `dist/firefox`:
 

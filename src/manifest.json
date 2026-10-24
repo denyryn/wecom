@@ -28,6 +28,12 @@
     "scripting",
     "contextMenus"
   ],
+  "firefox:permissions": [
+    "storage",
+    "scripting",
+    "contextMenus",
+    "clipboardWrite"
+  ],
   "host_permissions": [
     "<all_urls>"
   ],
