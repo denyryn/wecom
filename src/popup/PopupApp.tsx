@@ -6,6 +6,7 @@ import {EXPORT_DETAILS, type ExportDetail} from "@/shared/schema"
 import {clearComments, loadAllComments, loadComments, loadExportDetail, saveExportDetail, urlKey} from "@/shared/storage"
 import {attachAndSend} from "@/shared/messaging"
 import {browserApi} from "@/shared/browser"
+import appIcon from "@/images/icon-16.png"
 
 const CLEAR_CONFIRM_MS = 4000
 
@@ -109,8 +110,9 @@ export default function PopupApp() {
   return (
     <main className="flex flex-col gap-3 p-4">
       <header className="flex flex-col gap-1">
-        <h1 className="text-[14px] font-semibold leading-tight tracking-[-0.01em]">
-          Web UI Commentator
+        <h1 className="flex items-center gap-1.5 text-[14px] font-semibold leading-tight tracking-[-0.01em]">
+          <img src={appIcon} alt="" className="size-4 shrink-0" />
+          Wecom
         </h1>
         <p className="text-[11px] leading-snug text-muted-foreground">
           Click an element, leave a note, export JSON an agent can act on.
