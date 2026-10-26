@@ -3,7 +3,7 @@ import {buildExportFrom, projectComment, serializeExport} from "@/shared/export"
 import {buildLocator, resolveLocator} from "@/shared/locator"
 import {SCHEMA_VERSION, type Comment} from "@/shared/schema"
 import {placeCard} from "@/shared/position"
-import {loadExportDetail, saveExportDetail, urlKey, watchComments} from "@/shared/storage"
+import {clearSite, isOnSite, loadExportDetail, saveExportDetail, siteKey, urlKey, watchComments} from "@/shared/storage"
 
 const viewport = {width: 1000, height: 800}
 const card = {width: 320, height: 180}
@@ -35,6 +35,14 @@ describe("placeCard", () => {
     expect(
       placeCard({top: 100, left: 100, width: 80, height: 40}, card, {width: 1000, height: 200})
     ).toEqual({top: 12, left: 100})
+  })
+
+  it("pulls a card back on-screen when the anchor is above the viewport", () => {
+    expect(placeCard({top: -400, left: 100, width: 80, height: 30}, card, viewport).top).toBe(8)
+  })
+
+  it("pulls a card back on-screen when the anchor is below the viewport", () => {
+    expect(placeCard({top: 900, left: 100, width: 80, height: 30}, card, viewport).top).toBe(612)
   })
 })
 
@@ -271,6 +279,52 @@ describe("watchComments", () => {
 
     stop()
     expect(listeners).toHaveLength(0)
+  })
+})
+
+describe("site storage", () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  function stubChrome(initial: Record<string, unknown> = {}) {
+    const data = {...initial}
+    vi.stubGlobal("chrome", {
+      storage: {
+        local: {
+          get: async (key: string) => ({[key]: data[key]}),
+          set: async (items: Record<string, unknown>) => Object.assign(data, items)
+        }
+      }
+    })
+    return data
+  }
+
+  it("siteKey keeps only the origin", () => {
+    expect(siteKey("http://localhost:3000/checkout/?step=2#pay")).toBe("http://localhost:3000")
+  })
+
+  it("matches the origin itself and its pages, without sibling-origin collisions", () => {
+    const origin = "https://example.com"
+
+    expect(isOnSite("https://example.com", origin)).toBe(true)
+    expect(isOnSite("https://example.com/checkout", origin)).toBe(true)
+    expect(isOnSite("https://example.com.au/checkout", origin)).toBe(false)
+    expect(isOnSite("https://example.com:8080/checkout", origin)).toBe(false)
+  })
+
+  it("clears every page on the site and leaves other origins alone", async () => {
+    const data = stubChrome({
+      pages: {
+        "https://example.com": [{id: "a"}],
+        "https://example.com/checkout": [{id: "b"}],
+        "https://example.com.au/pricing": [{id: "c"}]
+      }
+    })
+
+    await clearSite("https://example.com")
+
+    expect(Object.keys(data.pages as Record<string, unknown>)).toEqual([
+      "https://example.com.au/pricing"
+    ])
   })
 })
 

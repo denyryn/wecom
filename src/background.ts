@@ -13,7 +13,8 @@ const ITEMS = [
   {id: "comment-element", title: "Comment on this element"},
   {id: "toggle-inspect", title: "Toggle comment mode"},
   {id: "copy-json", title: "Copy JSON"},
-  {id: "ditch-page", title: "Ditch all on this page"}
+  {id: "ditch-page", title: "Ditch all on this page"},
+  {id: "ditch-site", title: "Ditch all on this site"}
 ] as const
 
 browserApi().runtime.onInstalled.addListener(async () => {

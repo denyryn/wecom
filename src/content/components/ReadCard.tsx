@@ -5,6 +5,7 @@ import {Textarea} from "@/components/ui/textarea"
 import type {AnchorBox} from "@/shared/position"
 import type {Comment} from "@/shared/schema"
 import {AnchoredCard} from "./AnchoredCard"
+import {ElementFacts, ElementHeader} from "./ElementFacts"
 
 type ReadCardProps = {
   comment: Comment
@@ -50,8 +51,7 @@ export function ReadCard({comment, anchor, onSave, onDelete, onClose}: ReadCardP
 
   return (
     <AnchoredCard anchor={anchor} onKeyDown={onKeyDown}>
-      <div className="card-head">
-        <span className="element-selector">{comment.target.selector}</span>
+      <ElementHeader locator={comment.target}>
         <Button
           size="icon-sm"
           variant="ghost"
@@ -62,9 +62,11 @@ export function ReadCard({comment, anchor, onSave, onDelete, onClose}: ReadCardP
         >
           <X />
         </Button>
-      </div>
+      </ElementHeader>
 
       <div className="card-body">
+        <ElementFacts locator={comment.target} />
+
         {editing ? (
           <Textarea
             autoFocus

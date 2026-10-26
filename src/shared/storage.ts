@@ -18,6 +18,16 @@ export function urlKey(href: string = location.href): string {
   return `${url.origin}${path}`
 }
 
+/** Storage bucket for a site: every page on this origin. */
+export function siteKey(href: string = location.href): string {
+  return new URL(href).origin
+}
+
+/** Prefix match on origin + "/" so `example.com` never swallows `example.com.au`. */
+export function isOnSite(pageKey: string, origin: string): boolean {
+  return pageKey === origin || pageKey.startsWith(`${origin}/`)
+}
+
 export async function loadComments(pageKey: string): Promise<Comment[]> {
   const stored = await browserApi().storage.local.get(PAGES_KEY)
   const pages = stored[PAGES_KEY] as Pages | undefined
@@ -41,6 +51,15 @@ export async function loadAllComments(): Promise<Pages> {
 export async function clearComments(pageKey: string): Promise<void> {
   const pages = await loadAllComments()
   delete pages[pageKey]
+
+  await browserApi().storage.local.set({[PAGES_KEY]: pages})
+}
+
+export async function clearSite(origin: string): Promise<void> {
+  const pages = await loadAllComments()
+  for (const key of Object.keys(pages)) {
+    if (isOnSite(key, origin)) delete pages[key]
+  }
 
   await browserApi().storage.local.set({[PAGES_KEY]: pages})
 }

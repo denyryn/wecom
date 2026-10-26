@@ -80,8 +80,8 @@ Click a pin any time to reread, edit, or delete that comment.
   straight on it. Great for elements that are hard to click cleanly (links, tiny icons).
 - **Toolbar icon → Comment mode** does the same thing as the hotkey.
 - The same submenu carries the whole page workflow: **Toggle comment mode**, **Copy JSON**
-  (every page, same document as the popup), and **Ditch all on this page** (asks once in a
-  native confirm before deleting).
+  (every page, same document as the popup), **Ditch all on this page**, and **Ditch all on this
+  site** (both ask once in a native confirm before deleting).
 
 ### Keys
 
@@ -101,7 +101,8 @@ Click the extension icon to see:
 - **Export detail** — `light` / `medium` / `heavy` (see below). Remembered between popups, and
   the copy button on the in-page bar uses the same level.
 - **Copy JSON** / **Download JSON** — everything, every page, one document.
-- **Clear this page** — removes this page's comments (asks you to click twice — no accidents).
+- **Clear this page** — removes this page's comments. **Clear site** — removes every comment on
+  the current origin. Both ask you to click twice — no accidents.
 
 ### Where your comments live
 

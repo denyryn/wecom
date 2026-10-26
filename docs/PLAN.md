@@ -277,7 +277,7 @@ tooltip "element not found on this page".
 (`Confirm` is a two-click button, not an AlertDialog). One card open at a time.
 
 **Popup** — comment count for the active page, inspect toggle, "Copy JSON", "Download JSON",
-"Clear this page". Reads `chrome.storage.local` directly; no content-script round trip.
+"Clear page" and "Clear site". Reads `chrome.storage.local` directly; no content-script round trip.
 This is a normal extension page, so shadcn `Dialog`/`Tooltip`/`Tooltip` are fine here.
 
 ## 10. Export contract

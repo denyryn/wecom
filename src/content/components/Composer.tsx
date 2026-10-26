@@ -3,16 +3,18 @@ import {Send, X} from "lucide-react"
 import {Button} from "@/components/ui/button"
 import {Textarea} from "@/components/ui/textarea"
 import type {AnchorBox} from "@/shared/position"
+import type {Locator} from "@/shared/schema"
 import {AnchoredCard} from "./AnchoredCard"
+import {ElementFacts, ElementHeader} from "./ElementFacts"
 
 type ComposerProps = {
   anchor: AnchorBox
-  label: string
+  locator: Locator
   onSubmit: (body: string) => void
   onCancel: () => void
 }
 
-export function Composer({anchor, label, onSubmit, onCancel}: ComposerProps) {
+export function Composer({anchor, locator, onSubmit, onCancel}: ComposerProps) {
   const [value, setValue] = React.useState("")
 
   const submit = () => {
@@ -36,17 +38,17 @@ export function Composer({anchor, label, onSubmit, onCancel}: ComposerProps) {
 
   return (
     <AnchoredCard anchor={anchor} onKeyDown={onKeyDown}>
-      <div className="card-head">
-        <span className="element-selector">{label}</span>
-      </div>
+      <ElementHeader locator={locator} />
 
       <div className="card-body">
+        <ElementFacts locator={locator} />
+
         <Textarea
-          autoFocus
+          data-autofocus
           aria-label="Comment"
           value={value}
           rows={3}
-          placeholder="What should change here?"
+          placeholder="What should change here…"
           onChange={(event) => setValue(event.target.value)}
           className="card-input min-h-20 resize-none leading-relaxed"
         />

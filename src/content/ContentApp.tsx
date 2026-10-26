@@ -19,7 +19,6 @@ type Mode = "idle" | "inspect"
 type Draft = {
   locator: Locator
   anchor: AnchorBox
-  label: string
 }
 
 type ContentAppProps = {
@@ -31,8 +30,7 @@ function toDraft(element: Element): Draft {
   const rect = element.getBoundingClientRect()
   return {
     locator: buildLocator(element),
-    anchor: {top: rect.top, left: rect.left, width: rect.width, height: rect.height},
-    label: describeElement(element)
+    anchor: {top: rect.top, left: rect.left, width: rect.width, height: rect.height}
   }
 }
 
@@ -231,7 +229,7 @@ export default function ContentApp({host}: ContentAppProps) {
       {draft ? (
         <Composer
           anchor={draft.anchor}
-          label={draft.label}
+          locator={draft.locator}
           onSubmit={createComment}
           onCancel={() => setDraft(null)}
         />

@@ -1,5 +1,5 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
-import {copyAllJson, ditchPage} from "@/content/page-actions"
+import {copyAllJson, ditchPage, ditchSite} from "@/content/page-actions"
 import {urlKey} from "@/shared/storage"
 import type {Comment} from "@/shared/schema"
 
@@ -65,6 +65,51 @@ describe("copyAllJson", () => {
     stubClipboard(async () => Promise.reject(new Error("denied")))
 
     expect(await copyAllJson()).toBe(false)
+  })
+})
+
+describe("ditchSite", () => {
+  const other = "http://other.test/pricing"
+
+  beforeEach(() =>
+    stubChrome({
+      pages: {
+        [pageKey]: [comment("a")],
+        [`${pageKey}/checkout`]: [comment("b")],
+        [other]: [comment("c")]
+      }
+    })
+  )
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+  })
+
+  it("clears every page on the site only after confirmation", async () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true)
+
+    expect(await ditchSite()).toBe(true)
+    expect(confirm).toHaveBeenCalledWith("Ditch 2 comments on this site? This cannot be undone.")
+
+    const stored = await chrome.storage.local.get("pages")
+    expect(Object.keys(stored.pages)).toEqual([other])
+  })
+
+  it("keeps the comments when the confirmation is dismissed", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(false)
+
+    expect(await ditchSite()).toBe(false)
+    const stored = await chrome.storage.local.get("pages")
+    expect(Object.keys(stored.pages)).toHaveLength(3)
+  })
+
+  it("does not ask when the site has no comments", async () => {
+    stubChrome({pages: {[other]: [comment("c")]}})
+    const confirm = vi.spyOn(window, "confirm")
+
+    expect(await ditchSite()).toBe(false)
+    expect(confirm).not.toHaveBeenCalled()
   })
 })
 

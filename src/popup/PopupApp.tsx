@@ -3,18 +3,21 @@ import {Check, Copy, Download, MessageSquarePlus, Trash2} from "lucide-react"
 import {Button} from "@/components/ui/button"
 import {buildExport, copyExport, downloadExport} from "@/shared/export"
 import {EXPORT_DETAILS, type ExportDetail} from "@/shared/schema"
-import {clearComments, loadAllComments, loadComments, loadExportDetail, saveExportDetail, urlKey} from "@/shared/storage"
+import {clearComments, clearSite, isOnSite, loadAllComments, loadExportDetail, saveExportDetail, siteKey, urlKey} from "@/shared/storage"
 import {attachAndSend} from "@/shared/messaging"
 import {browserApi} from "@/shared/browser"
 import appIcon from "@/images/icon-16.png"
 
 const CLEAR_CONFIRM_MS = 4000
+const CLEAR_IDLE_CLASS = "w-full text-destructive hover:bg-destructive/10 hover:text-destructive"
+type ClearScope = "page" | "site"
 
 export default function PopupApp() {
   const [tab, setTab] = React.useState<chrome.tabs.Tab | null>(null)
   const [count, setCount] = React.useState<number | null>(null)
+  const [siteCount, setSiteCount] = React.useState<number | null>(null)
   const [total, setTotal] = React.useState<number | null>(null)
-  const [armed, setArmed] = React.useState(false)
+  const [arm, setArm] = React.useState<ClearScope | null>(null)
   const [copyState, setCopyState] = React.useState<"copied" | "failed" | null>(null)
   const [detail, setDetail] = React.useState<ExportDetail>("medium")
   const [note, setNote] = React.useState<string | null>(null)
@@ -24,16 +27,27 @@ export default function PopupApp() {
 
   const disarm = React.useCallback(() => {
     window.clearTimeout(armTimer.current)
-    setArmed(false)
+    setArm(null)
   }, [])
 
   const refresh = React.useCallback(async (t: chrome.tabs.Tab | null) => {
-    const all = Object.values(await loadAllComments()).flat()
+    const pages = await loadAllComments()
     if (!alive.current) return
-    setTotal(all.length)
+    setTotal(Object.values(pages).flat().length)
 
-    const page = t?.url ? await loadComments(urlKey(t.url)) : []
-    if (alive.current) setCount(page.length)
+    if (!t?.url) {
+      setCount(0)
+      setSiteCount(0)
+      return
+    }
+
+    setCount((pages[urlKey(t.url)] ?? []).length)
+    const origin = siteKey(t.url)
+    setSiteCount(
+      Object.entries(pages)
+        .filter(([key]) => isOnSite(key, origin))
+        .reduce((sum, [, comments]) => sum + comments.length, 0)
+    )
   }, [])
 
   React.useEffect(() => {
@@ -95,15 +109,17 @@ export default function PopupApp() {
     void buildExport(detail).then(downloadExport)
   }
 
-  const clearPage = async () => {
-    if (!armed) {
-      setArmed(true)
+  const clear = async (scope: ClearScope) => {
+    if (arm !== scope) {
+      setArm(scope)
+      window.clearTimeout(armTimer.current)
       armTimer.current = window.setTimeout(disarm, CLEAR_CONFIRM_MS)
       return
     }
     disarm()
     if (!tab?.url) return
-    await clearComments(urlKey(tab.url))
+    if (scope === "page") await clearComments(urlKey(tab.url))
+    else await clearSite(siteKey(tab.url))
     await refresh(tab)
   }
 
@@ -201,20 +217,28 @@ export default function PopupApp() {
         {copyState === "copied" ? "Copied." : copyState === "failed" ? "Copy failed." : ""}
       </p>
 
-      <Button
-        variant={armed ? "destructive" : "ghost"}
-        className={
-          armed
-            ? "w-full"
-            : "w-full text-destructive hover:bg-destructive/10 hover:text-destructive"
-        }
-        disabled={!count}
-        onClick={clearPage}
-        onBlur={disarm}
-      >
-        <Trash2 />
-        {armed ? "Confirm clear" : "Clear this page"}
-      </Button>
+      <div className="grid grid-cols-2 gap-2">
+        <Button
+          variant={arm === "page" ? "destructive" : "ghost"}
+          className={arm === "page" ? "w-full" : CLEAR_IDLE_CLASS}
+          disabled={!count}
+          onClick={() => clear("page")}
+          onBlur={disarm}
+        >
+          <Trash2 />
+          {arm === "page" ? "Confirm page" : "Clear page"}
+        </Button>
+        <Button
+          variant={arm === "site" ? "destructive" : "ghost"}
+          className={arm === "site" ? "w-full" : CLEAR_IDLE_CLASS}
+          disabled={!siteCount}
+          onClick={() => clear("site")}
+          onBlur={disarm}
+        >
+          <Trash2 />
+          {arm === "site" ? "Confirm site" : "Clear site"}
+        </Button>
+      </div>
 
       <footer className="flex flex-col gap-1 border-t border-border pt-3">
         <p className="text-[11px] text-muted-foreground">

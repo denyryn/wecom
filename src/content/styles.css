@@ -73,6 +73,11 @@
 /* One card shell for the composer and the read card. The caret is drawn from
    the card's own border so it reads as a tether, not a speech bubble. */
 .anchored-card {
+  display: flex;
+  flex-direction: column;
+  max-width: calc(100vw - 16px);
+  max-height: calc(100vh - 16px);
+  max-height: calc(100dvh - 16px);
   border: 1px solid var(--border);
   border-radius: var(--radius-card);
   background-color: var(--popover);
@@ -128,6 +133,7 @@
 
 .card-head {
   display: flex;
+  flex: none;
   align-items: center;
   gap: var(--space-xs);
   min-height: 40px;
@@ -136,11 +142,19 @@
 }
 
 .card-body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
   padding: var(--space-sm);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .card-foot {
   display: flex;
+  flex: none;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-xs);
@@ -150,6 +164,7 @@
 /* The picked element is the one thing on the card that is highlighted. */
 .element-selector {
   display: block;
+  flex: 1 1 auto;
   min-width: 0;
   max-width: 100%;
   overflow: hidden;
@@ -162,7 +177,119 @@
   font-weight: 500;
 }
 
+/* Header identity: tag stamp, a marker flag only when the selector is weak. */
+.element-tag {
+  flex: none;
+  padding: 0 var(--space-2xs);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-mark);
+  background-color: var(--paper-2);
+  color: var(--foreground);
+  font-family: var(--font-code);
+  font-size: var(--text-2xs);
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+.element-flag {
+  flex: none;
+  padding: 0 var(--space-2xs);
+  border-radius: var(--radius-mark);
+  background-color: var(--marker);
+  color: var(--marker-ink);
+  font-family: var(--font-ui);
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+/* Element facts: one label column, so every value starts on the same edge.
+   A hairline separates what the element is from what you are writing about it.
+   Facts shrink and scroll first on a short window; the body scrolls only when
+   the input and footer still do not fit. */
+.element-facts {
+  display: grid;
+  flex: 0 1 auto;
+  min-height: 4.5rem;
+  gap: var(--space-3xs);
+  margin-bottom: var(--space-sm);
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid var(--border);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.element-fact {
+  display: grid;
+  grid-template-columns: 3.5rem minmax(0, 1fr);
+  gap: var(--space-xs);
+  align-items: baseline;
+}
+
+.element-fact dt {
+  color: var(--muted-foreground);
+  font-family: var(--font-ui);
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  line-height: 1.5;
+}
+
+.element-fact dd {
+  min-width: 0;
+  margin: 0;
+  color: var(--foreground);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+}
+
+.element-fact__code {
+  overflow: hidden;
+  font-family: var(--font-code);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.element-fact__text {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: var(--text-sm);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.element-fact__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3xs);
+}
+
+.element-chip {
+  display: inline-block;
+  max-width: 100%;
+  padding: 0 var(--space-2xs);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-mark);
+  background-color: var(--paper-2);
+  font-family: var(--font-code);
+  font-size: var(--text-2xs);
+  line-height: 1.7;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.element-chip--more {
+  background-color: transparent;
+  color: var(--muted-foreground);
+}
+
+
 .card-input {
+  flex: none;
   border-color: var(--input);
   border-radius: var(--radius-control);
   background-color: var(--card);

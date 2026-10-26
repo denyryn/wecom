@@ -37,8 +37,11 @@ export function placeCard(
         ? above
         : Math.max(GAP, clampedBelow)
 
+  // The anchor can itself be off-screen (resize, reflow, scrolled away). Never
+  // let a card that fits the viewport hang past an edge: fully visible wins.
+  const clampedTop = Math.max(GAP, Math.min(top, clampedBelow))
   const rightmost = viewport.width - card.width - GAP
   const left = Math.max(GAP, Math.min(anchor.left, rightmost))
 
-  return {top, left}
+  return {top: clampedTop, left}
 }
