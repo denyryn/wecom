@@ -255,7 +255,7 @@ has no pin; it is still present in the export.
 
 ### Verification status
 
-`npx tsc --noEmit` is clean and `npm test` passes 33 tests (card placement, locator
+`npx tsc --noEmit` is clean and `npm test` passes 41 tests (card placement, locator
 build/resolve, `urlKey`, storage watch, export projection, right-click targeting, hotkey
 matching, context-menu copy and clear). `npm run build` produces ~540 KB in `dist/chromium`.
 
