@@ -3,7 +3,17 @@ import {buildExportFrom, projectComment, serializeExport} from "@/shared/export"
 import {buildLocator, resolveLocator} from "@/shared/locator"
 import {SCHEMA_VERSION, type Comment} from "@/shared/schema"
 import {placeCard} from "@/shared/position"
-import {clearSite, isOnSite, loadExportDetail, saveExportDetail, siteKey, urlKey, watchComments} from "@/shared/storage"
+import {
+  clearSite,
+  isOnSite,
+  loadExportDetail,
+  loadListSide,
+  saveExportDetail,
+  saveListSide,
+  siteKey,
+  urlKey,
+  watchComments
+} from "@/shared/storage"
 
 const viewport = {width: 1000, height: 800}
 const card = {width: 320, height: 180}
@@ -357,5 +367,37 @@ describe("export detail preference", () => {
 
     data.exportDetail = "extreme"
     expect(await loadExportDetail()).toBe("medium")
+  })
+})
+
+describe("comment list side preference", () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  function stubChrome(initial: Record<string, unknown> = {}) {
+    const data = {...initial}
+    vi.stubGlobal("chrome", {
+      storage: {
+        local: {
+          get: async (key: string) => ({[key]: data[key]}),
+          set: async (items: Record<string, unknown>) => Object.assign(data, items)
+        }
+      }
+    })
+    return data
+  }
+
+  it("falls back to the right edge when nothing is stored", async () => {
+    stubChrome()
+    expect(await loadListSide()).toBe("right")
+  })
+
+  it("round-trips a saved side and rejects junk", async () => {
+    const data = stubChrome()
+    await saveListSide("left")
+    expect(data.listSide).toBe("left")
+    expect(await loadListSide()).toBe("left")
+
+    data.listSide = "top"
+    expect(await loadListSide()).toBe("right")
   })
 })

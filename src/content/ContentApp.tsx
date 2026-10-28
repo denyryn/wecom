@@ -1,13 +1,22 @@
 import * as React from "react"
-import {Check, Copy, Trash2, TriangleAlert} from "lucide-react"
+import {Check, Copy, List, Trash2, TriangleAlert} from "lucide-react"
 import {Badge} from "@/components/ui/badge"
 import {Button} from "@/components/ui/button"
 import {buildExportFrom, copyExport} from "@/shared/export"
 import {buildLocator, resolveLocator} from "@/shared/locator"
 import type {AnchorBox} from "@/shared/position"
-import {newCommentId, type Comment, type Locator} from "@/shared/schema"
-import {loadComments, loadExportDetail, saveComments, urlKey, watchComments} from "@/shared/storage"
+import {newCommentId, type Comment, type ListSide, type Locator} from "@/shared/schema"
+import {
+  loadComments,
+  loadExportDetail,
+  loadListSide,
+  saveComments,
+  saveListSide,
+  urlKey,
+  watchComments
+} from "@/shared/storage"
 import {Composer} from "./components/Composer"
+import {CommentList} from "./components/CommentList"
 import {PinLayer, type Pin} from "./components/PinLayer"
 import {ReadCard} from "./components/ReadCard"
 import {createInspector, describeElement, type HoverTarget} from "./inspect"
@@ -41,9 +50,15 @@ export default function ContentApp({host}: ContentAppProps) {
   const [draft, setDraft] = React.useState<Draft | null>(null)
   const [comments, setComments] = React.useState<Comment[]>([])
   const [activeId, setActiveId] = React.useState<string | null>(null)
+  const [listOpen, setListOpen] = React.useState(false)
+  const [listSide, setListSide] = React.useState<ListSide>("right")
 
   React.useEffect(() => {
     let alive = true
+
+    loadListSide()
+      .then((side) => alive && setListSide(side))
+      .catch(() => {})
 
     loadComments(pageKey)
       .then((stored) => alive && setComments(stored))
@@ -82,7 +97,7 @@ export default function ContentApp({host}: ContentAppProps) {
   }, [])
 
   React.useEffect(() => {
-    if (!draft && !activeId) return
+    if (!draft && !activeId && !listOpen) return
 
     // Bubble phase, so an open card's own Escape handling (and the inspector's
     // capture-phase handler) gets the first say.
@@ -91,12 +106,13 @@ export default function ContentApp({host}: ContentAppProps) {
       event.preventDefault()
       event.stopPropagation()
       if (draft) setDraft(null)
-      else setActiveId(null)
+      else if (activeId) setActiveId(null)
+      else setListOpen(false)
     }
 
     document.addEventListener("keydown", onKeyDown)
     return () => document.removeEventListener("keydown", onKeyDown)
-  }, [draft, activeId])
+  }, [draft, activeId, listOpen])
 
   React.useEffect(() => {
     if (mode !== "inspect") {
@@ -189,7 +205,7 @@ export default function ContentApp({host}: ContentAppProps) {
     setDraft(null)
   }
 
-  const showBar = comments.length > 0 || mode === "inspect"
+  const showBar = comments.length > 0 || mode === "inspect" || listOpen
   const [barMounted, setBarMounted] = React.useState(showBar)
   const [barLeaving, setBarLeaving] = React.useState(false)
 
@@ -221,8 +237,31 @@ export default function ContentApp({host}: ContentAppProps) {
           count={comments.length}
           on={mode === "inspect"}
           leaving={barLeaving}
+          listOpen={listOpen}
+          onToggleList={() => setListOpen((open) => !open)}
           onCopy={async () => copyExport(buildExportFrom(comments, await loadExportDetail()))}
           onDitch={ditchAll}
+        />
+      ) : null}
+
+      {listOpen ? (
+        <CommentList
+          comments={comments}
+          side={listSide}
+          activeId={activeId}
+          onFlip={() => {
+            const next = listSide === "right" ? "left" : "right"
+            setListSide(next)
+            // The chosen edge is a user setting, like the export detail.
+            saveListSide(next).catch(() => {})
+          }}
+          onClose={() => setListOpen(false)}
+          onSelect={(id) => {
+            // A comment whose element is gone has no anchor for the read card;
+            // the list still lets you copy or delete it.
+            if (pins.some((pin) => pin.comment.id === id)) setActiveId(id)
+          }}
+          onDelete={deleteComment}
         />
       ) : null}
 
@@ -306,11 +345,13 @@ type ModeHintProps = {
   count: number
   on: boolean
   leaving: boolean
+  listOpen: boolean
+  onToggleList: () => void
   onCopy: () => Promise<boolean>
   onDitch: () => void
 }
 
-function ModeHint({count, on, leaving, onCopy, onDitch}: ModeHintProps) {
+function ModeHint({count, on, leaving, listOpen, onToggleList, onCopy, onDitch}: ModeHintProps) {
   const [copyState, setCopyState] = React.useState<"copied" | "failed" | null>(null)
   const [armed, setArmed] = React.useState(false)
   const alive = React.useRef(true)
@@ -367,6 +408,22 @@ function ModeHint({count, on, leaving, onCopy, onDitch}: ModeHintProps) {
         <span className="mode-hint__count" aria-label={`${count} on this page`}>
           {count}
         </span>
+
+        <Button
+          variant="ghost"
+          size="icon-xs"
+          className={
+            listOpen
+              ? "rounded-sm bg-accent text-accent-foreground"
+              : "rounded-sm text-muted-foreground"
+          }
+          data-tooltip={listOpen ? "Hide comment list" : "Show comment list"}
+          aria-label={listOpen ? "Hide comment list" : "Show comment list"}
+          aria-pressed={listOpen}
+          onClick={onToggleList}
+        >
+          <List />
+        </Button>
 
         <Button
           variant="ghost"

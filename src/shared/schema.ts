@@ -47,6 +47,9 @@ export type Comment = {
 export const EXPORT_DETAILS = ["light", "medium", "heavy"] as const
 export type ExportDetail = (typeof EXPORT_DETAILS)[number]
 
+export const LIST_SIDES = ["left", "right"] as const
+export type ListSide = (typeof LIST_SIDES)[number]
+
 export const SCHEMA_VERSION = 2
 
 export function newCommentId(): string {

@@ -421,6 +421,155 @@
   display: none;
 }
 
+/* Floating comment index. The bar opens it; the header flips the edge. */
+.comment-list {
+  position: absolute;
+  top: 3.5rem;
+  bottom: var(--space-xs);
+  display: flex;
+  flex-direction: column;
+  width: min(320px, calc(100vw - 24px));
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+  background-color: var(--popover);
+  color: var(--popover-foreground);
+  box-shadow: var(--shadow-raised);
+  pointer-events: auto;
+  animation: card-in var(--dur-micro) var(--ease-out);
+}
+
+.comment-list[data-side="right"] {
+  right: var(--space-xs);
+}
+
+.comment-list[data-side="left"] {
+  left: var(--space-xs);
+}
+
+.comment-list__head {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-2xs);
+  min-height: 40px;
+  padding: var(--space-2xs) var(--space-sm);
+  border-bottom: 1px solid var(--border);
+}
+
+.comment-list__title {
+  font-weight: 600;
+}
+
+.comment-list__count {
+  padding-left: var(--space-xs);
+  border-left: 1px solid var(--border);
+  color: var(--muted-foreground);
+  font-variant-numeric: tabular-nums;
+}
+
+.comment-list__empty {
+  margin: 0;
+  padding: var(--space-md) var(--space-sm);
+  color: var(--muted-foreground);
+  font-size: var(--text-xs);
+}
+
+.comment-list__items {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--space-3xs);
+  margin: 0;
+  padding: var(--space-2xs);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  list-style: none;
+}
+
+.comment-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2xs);
+  padding: var(--space-2xs);
+  border-radius: var(--radius-inner);
+  transition: background-color var(--dur-micro) var(--ease-out);
+}
+
+.comment-item:hover,
+.comment-item[data-active="true"] {
+  background-color: var(--paper-2);
+}
+
+.comment-item__main {
+  display: flex;
+  flex: 1 1 auto;
+  gap: var(--space-xs);
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.comment-item__main:focus-visible {
+  border-radius: var(--radius-mark);
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.comment-item__index {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-pin);
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.comment-item__text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+  min-width: 0;
+}
+
+.comment-item__body {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: var(--text-xs);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.comment-item__selector {
+  overflow: hidden;
+  color: var(--muted-foreground);
+  font-family: var(--font-code);
+  font-size: var(--text-2xs);
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.comment-item__actions {
+  display: flex;
+  flex: none;
+  gap: var(--space-3xs);
+}
+
 /* Pins are ink marks. The hit area is 32px while the mark stays 24px. */
 .pin {
   position: absolute;
@@ -470,11 +619,13 @@
 @media (prefers-reduced-motion: reduce) {
   .anchored-card,
   .mode-hint,
-  .mode-hint[data-leaving="true"] {
+  .mode-hint[data-leaving="true"],
+  .comment-list {
     animation: none;
   }
 
-  .pin {
+  .pin,
+  .comment-item {
     transition: none;
   }
 

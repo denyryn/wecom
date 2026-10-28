@@ -1,9 +1,10 @@
-import type {Comment, ExportDetail} from "./schema"
-import {EXPORT_DETAILS} from "./schema"
+import type {Comment, ExportDetail, ListSide} from "./schema"
+import {EXPORT_DETAILS, LIST_SIDES} from "./schema"
 import {browserApi} from "@/shared/browser"
 
 const PAGES_KEY = "pages"
 const DETAIL_KEY = "exportDetail"
+const SIDE_KEY = "listSide"
 
 type Pages = Record<string, Comment[]>
 
@@ -77,6 +78,18 @@ export async function loadExportDetail(): Promise<ExportDetail> {
 
 export async function saveExportDetail(detail: ExportDetail): Promise<void> {
   await browserApi().storage.local.set({[DETAIL_KEY]: detail})
+}
+
+/** Which screen edge the comment list opens on. Same fallback rule as the detail level. */
+export async function loadListSide(): Promise<ListSide> {
+  const stored = await browserApi().storage.local.get(SIDE_KEY)
+  const value = stored[SIDE_KEY]
+
+  return LIST_SIDES.includes(value as ListSide) ? (value as ListSide) : "right"
+}
+
+export async function saveListSide(side: ListSide): Promise<void> {
+  await browserApi().storage.local.set({[SIDE_KEY]: side})
 }
 
 /**
