@@ -2,7 +2,7 @@
   "private": true,
   "name": "web-ui-commentator",
   "description": "Point at any element on a page, leave a comment, and export a precise locator your AI coding agent can act on.",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "license": "MIT",
   "type": "module",
   "dependencies": {
