@@ -61,6 +61,73 @@ Use this while hacking on the extension itself; reloading on save is automatic.
 
 ---
 
+## Building from source (store review)
+
+This section is the authoritative build recipe: it produces the exact file uploaded to the
+store. Everything in the repository is human-written source — TypeScript, TSX, CSS, HTML,
+JSON. Nothing under `src/` is machine-generated, transpiled in place, or vendored from a
+build. `dist/` and `node_modules/` are output and are excluded from the source archive.
+
+### Build environment
+
+| | |
+| --- | --- |
+| Operating system | Ubuntu 24.04 x64 (what CI uses). macOS 14+ and Windows 11 also work. |
+| Node.js | 22.x, **≥ 22.12.0** — the minimum `extension@4.1.34` accepts. `nvm use` in the repo root reads `.nvmrc` (22). |
+| npm | **11.19.0** (pinned in `packageManager`). npm 10+ works; no other global tool is needed. |
+
+Installing Node.js 22.12+:
+
+```bash
+# any of these
+nvm install 22 && nvm use 22          # nvm
+fnm install 22 && fnm use 22          # fnm
+# or the official installer from https://nodejs.org (22.x LTS)
+node -v                                # expect v22.x
+```
+
+npm ships with Node. To pin the exact version used here: `corepack enable && corepack prepare npm@11.19.0 --activate`.
+
+### Steps (Chrome / Edge)
+
+```bash
+git clone <this-repo-url> web-ui-commentator
+cd web-ui-commentator
+npm ci                       # exact dependency tree from package-lock.json
+npm run build:chrome         # -> dist/chrome/ and the store zip
+```
+
+Expected output — the last lines name the artifact:
+
+```
+⏵⏵⏵ Extension built for production in dist/chrome (489.3 KB).
+⏵⏵⏵ Packaged dist/web-ui-commentator-<version>-chrome.zip (170.4 KB).
+```
+
+`dist/web-ui-commentator-<version>-chrome.zip` is the file to upload; `dist/chrome/` is the
+same build unpacked, for loading with **Load unpacked**.
+
+Firefox: `npm run build:firefox` → `dist/firefox/` and
+`dist/web-ui-commentator-<version>-firefox.zip`.
+
+### One command
+
+`./build.sh` (or `./build.sh firefox`) runs all of the above: checks the Node version, runs
+`npm ci`, invokes the matching `npm run build:<browser>` script, and prints the artifact path.
+The individual steps live in `package.json` under `scripts`.
+
+### Notes for the reviewer
+
+- The build is offline after `npm ci`; it fetches nothing at build time beyond the npm registry.
+- The packaged extension fetches no remote code and evaluates no strings at runtime. React,
+  Radix, Tailwind output, and the content-script bundle are all compiled into the package.
+- Third-party libraries are used as published npm packages; their licenses are covered by the
+  `.LICENSE.txt` files the bundler emits next to each generated file.
+- No source maps are included in the zip.
+- `src/manifest.json` carries its own `version`, independent of `package.json` — bump both in the
+  same commit. Extension.js only raises the Firefox `strict_min_version` (to 140, which
+  `data_collection_permissions` requires) and only when it is still lower.
+
 ## Using it
 
 ### The 30-second version
