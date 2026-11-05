@@ -39,6 +39,7 @@ export function createInspector(options: InspectorOptions): Inspector {
 
   let active = false
   let current: Element | null = null
+  let pending: Element | null = null
   let frame = 0
 
   const isOurs = (event: Event) => event.composedPath().includes(host)
@@ -60,26 +61,38 @@ export function createInspector(options: InspectorOptions): Inspector {
   }
 
   const onPointerDown = (event: PointerEvent) => {
-    if (!active || event.button !== 0 || isOurs(event)) return
-
-    const target = document.elementFromPoint(event.clientX, event.clientY)
-    suppress(event)
-
-    if (isEligibleTarget(target, host)) {
-      onPick({element: target, rect: target.getBoundingClientRect()})
+    if (!active) return
+    if (isOurs(event)) {
+      pending = null
+      return
     }
+    if (event.button !== 0) return
+
+    suppress(event)
+    const target = document.elementFromPoint(event.clientX, event.clientY)
+    pending = isEligibleTarget(target, host) ? target : null
   }
 
-  // A click can still be synthesised (Enter/Space on a focused control, a page
+  // Pick on click, not on pointerdown: stopping the inspector on pointerdown
+  // would leave the rest of the click sequence (mousedown, pointerup, click)
+  // unguarded, and the page button would still run its handler.
+  //
+  // A click can also be synthesised (Enter/Space on a focused control, a page
   // handler calling click()), so it is blocked independently of pointerdown.
   const onBlockedEvent = (event: Event) => {
     if (!active || isOurs(event)) return
     suppress(event)
+
+    if (event.type !== "click" || !pending) return
+    const element = pending
+    pending = null
+    if (element.isConnected) onPick({element, rect: element.getBoundingClientRect()})
   }
 
   const onKeyDown = (event: KeyboardEvent) => {
     if (!active || event.key !== "Escape") return
     suppress(event)
+    pending = null
     onCancel()
   }
 
@@ -100,7 +113,9 @@ export function createInspector(options: InspectorOptions): Inspector {
 
     document.addEventListener("pointermove", onPointerMove, true)
     document.addEventListener("pointerdown", onPointerDown, true)
+    document.addEventListener("pointerup", onBlockedEvent, true)
     document.addEventListener("mousedown", onBlockedEvent, true)
+    document.addEventListener("mouseup", onBlockedEvent, true)
     document.addEventListener("click", onBlockedEvent, true)
     document.addEventListener("submit", onBlockedEvent, true)
     document.addEventListener("keydown", onKeyDown, true)
@@ -114,7 +129,9 @@ export function createInspector(options: InspectorOptions): Inspector {
 
     document.removeEventListener("pointermove", onPointerMove, true)
     document.removeEventListener("pointerdown", onPointerDown, true)
+    document.removeEventListener("pointerup", onBlockedEvent, true)
     document.removeEventListener("mousedown", onBlockedEvent, true)
+    document.removeEventListener("mouseup", onBlockedEvent, true)
     document.removeEventListener("click", onBlockedEvent, true)
     document.removeEventListener("submit", onBlockedEvent, true)
     document.removeEventListener("keydown", onKeyDown, true)
@@ -124,6 +141,7 @@ export function createInspector(options: InspectorOptions): Inspector {
     if (frame) cancelAnimationFrame(frame)
     frame = 0
     current = null
+    pending = null
   }
 
   return {start, stop}

@@ -21,6 +21,7 @@ import {PinLayer, type Pin} from "./components/PinLayer"
 import {ReadCard} from "./components/ReadCard"
 import {createInspector, describeElement, type HoverTarget} from "./inspect"
 import {takeContextTarget} from "./context-target"
+import {promoteHost} from "./overlay-host"
 import {onCommentElement, onToggleInspect} from "./toggle"
 
 type Mode = "idle" | "inspect"
@@ -130,6 +131,9 @@ export default function ContentApp({host}: ContentAppProps) {
       onCancel: () => setMode("idle")
     })
 
+    // A modal the page opened after injection may have taken the top layer;
+    // re-open the overlay so the hover highlight and the card stay above it.
+    promoteHost(host)
     inspector.start()
     return () => inspector.stop()
   }, [mode, host])

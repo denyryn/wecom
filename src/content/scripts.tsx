@@ -4,6 +4,7 @@ import {trackContextTarget} from "./context-target"
 import {trackToggleHotkey} from "./hotkey"
 import {emitCommentElement, emitToggleInspect} from "./toggle"
 import {copyAllJson, ditchPage, ditchSite} from "./page-actions"
+import {isolateHostEvents, promoteHost} from "./overlay-host"
 import {browserApi} from "@/shared/browser"
 
 /**
@@ -20,9 +21,27 @@ export default function initial() {
   const host = document.createElement("div")
   host.setAttribute("data-extension-root", "true")
   // The shadow root shields descendants, not the host itself: page rules like
-  // `div { opacity: .8 }` still hit the host without this.
-  host.style.cssText = "all: initial !important"
+  // `div { opacity: .8 }` still hit the host without this. The rest overrides
+  // the popover defaults so the top-layer host still covers the viewport.
+  host.style.cssText = [
+    "all: initial !important",
+    "position: fixed !important",
+    "inset: 0 !important",
+    "width: auto !important",
+    "height: auto !important",
+    "margin: 0 !important",
+    "padding: 0 !important",
+    "border: 0 !important",
+    "background: transparent !important",
+    "overflow: visible !important",
+    "pointer-events: none !important",
+    "display: block !important",
+    "z-index: 2147483647 !important"
+  ].join("; ")
+  host.setAttribute("popover", "manual")
   document.body.appendChild(host)
+  promoteHost(host)
+  const stopHostEvents = isolateHostEvents(host)
   const stopTrackingContext = trackContextTarget(host)
   const stopHotkey = trackToggleHotkey()
 
@@ -54,6 +73,7 @@ export default function initial() {
 
   return () => {
     browserApi().runtime.onMessage.removeListener(onMessage)
+    stopHostEvents()
     stopTrackingContext()
     stopHotkey()
     mountingPoint.unmount()
