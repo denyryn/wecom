@@ -54,7 +54,7 @@ export default function initial() {
   // survive it — which is why the design tokens keep working but the font has
   // to be set here rather than on :host.
   const container = document.createElement("div")
-  container.className = "font-sans text-[13px] leading-normal text-foreground"
+  container.className = "font-sans text-[length:var(--text-base)] leading-relaxed text-foreground"
   shadowRoot.appendChild(container)
 
   const mountingPoint = ReactDOM.createRoot(container)

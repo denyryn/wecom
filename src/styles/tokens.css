@@ -1,13 +1,12 @@
-/* Hallmark · checked: 2026-10-24 · genre: modern-minimal · scope: app
- * floor: 0 FAIL · redesign: full · shape: app screen · posture: restrained
- * theme: custom, annotation ink (by request) · system: warm paper, logo black
+/* Hallmark · checked: 2026-11-27 · genre: modern-minimal · scope: app
+ * floor: 0 FAIL · redesign: dark instrument · shape: app screen · posture: precise
+ * theme: custom, mono instrument (by request) · system: near-black, one amber signal
  * built: the project · every handler, prop and aria label kept · v2.0.0
  */
-/* Hallmark · pre-emit critique: P4 H4 E5 S5 R5 V4 · weakest: P, a paper-and-ink
- * skin on a review tool; the argument is that a comment is a mark, so the marker
- * only ever appears on the target, the pin and the mode, never as decoration.
- * Radius is now one step per nesting level, from mark to card, so nesting reads
- * concentric instead of accidental.
+/* Hallmark · pre-emit critique: P4 H4 E5 S5 R5 V4 · weakest: P, a dark skin on a
+ * review tool; the argument is unchanged — a comment is a mark, so the single
+ * amber signal only ever appears on the target, the pin, the mode and focus.
+ * One local face carries both UI and data; hierarchy comes from size and weight.
  */
 /*
  * Design tokens for every surface (content overlay + popup).
@@ -17,6 +16,34 @@
  * Tailwind's own `@theme` layer emits `:root, :host` for the same reason
  * (tailwindcss >= 4.0.1), so the two agree.
  */
+
+/* IBM Plex Mono, latin subset, bundled locally — the extension works offline.
+   Rspack inlines the woff2 as a data URL so the shadow-root stylesheet, which is
+   itself injected as a data: URL, can load the face without a document URL. */
+@font-face {
+  font-family: "Plex Mono Local";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/plex-mono-latin-400.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Plex Mono Local";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("../fonts/plex-mono-latin-500.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Plex Mono Local";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("../fonts/plex-mono-latin-600.woff2") format("woff2");
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -59,47 +86,45 @@
 
 :root,
 :host {
-  /* Face: the system UI stack keeps the extension working offline. */
-  --font-ui: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, sans-serif;
-  --font-code: ui-monospace, "SFMono-Regular", "SF Mono", Menlo, Consolas,
-    "Liberation Mono", monospace;
+  /* One face, two roles. Weight and size carry the hierarchy. */
+  --font-ui: "Plex Mono Local", ui-monospace, "SFMono-Regular", "SF Mono", Menlo,
+    Consolas, "Liberation Mono", monospace;
+  --font-code: var(--font-ui);
 
-  /* Paper and ink: warm neutrals sampled off the hand-drawn logo. */
-  --background: oklch(0.972 0.009 82);
-  --foreground: oklch(0.2 0.012 70);
-  --card: oklch(0.988 0.005 82);
-  --card-foreground: oklch(0.2 0.012 70);
-  --popover: oklch(0.988 0.005 82);
-  --popover-foreground: oklch(0.2 0.012 70);
-  --primary: oklch(0.235 0.012 70);
-  --primary-foreground: oklch(0.985 0.005 82);
-  --secondary: oklch(0.938 0.01 82);
-  --secondary-foreground: oklch(0.24 0.012 70);
-  --muted: oklch(0.944 0.01 82);
-  --muted-foreground: oklch(0.455 0.014 72);
-  --accent: oklch(0.938 0.012 82);
-  --accent-foreground: oklch(0.2 0.012 70);
-  --destructive: oklch(0.505 0.17 27);
-  --destructive-foreground: oklch(0.985 0.005 82);
-  --border: oklch(0.885 0.01 82);
-  --input: oklch(0.62 0.014 76);
-  --ring: oklch(0.235 0.012 70);
+  /* Near-black neutrals, hue 260. Opaque surfaces read over any host page. */
+  --background: oklch(0.17 0.014 260);
+  --foreground: oklch(0.94 0.008 260);
+  --card: oklch(0.21 0.014 260);
+  --card-foreground: oklch(0.94 0.008 260);
+  --popover: oklch(0.21 0.014 260);
+  --popover-foreground: oklch(0.94 0.008 260);
+  --primary: oklch(0.3 0.014 260);
+  --primary-foreground: oklch(0.96 0.008 260);
+  --secondary: oklch(0.27 0.014 260);
+  --secondary-foreground: oklch(0.94 0.008 260);
+  --muted: oklch(0.25 0.012 260);
+  --muted-foreground: oklch(0.68 0.012 260);
+  --accent: oklch(0.32 0.014 260);
+  --accent-foreground: oklch(0.96 0.008 260);
+  --destructive: oklch(0.65 0.19 25);
+  --destructive-foreground: oklch(0.17 0.014 260);
+  --border: oklch(0.36 0.014 260);
+  --input: oklch(0.44 0.014 260);
+  --ring: oklch(0.86 0.15 88);
 
-  /* One highlighter, only where a mark is being made. */
-  --marker: oklch(0.845 0.165 92);
-  --marker-ink: oklch(0.235 0.02 80);
+  /* The one signal: the highlighter, retuned for the dark canvas. */
+  --marker: oklch(0.86 0.15 88);
+  --marker-ink: oklch(0.17 0.02 80);
 
-  /* Depth: a hairline plus one low shadow; no glows. */
-  --paper-2: oklch(0.945 0.01 82);
-  --paper-3: oklch(0.92 0.012 82);
-  --ink-2: oklch(0.3 0.012 70);
-  --shadow-raised: 0 8px 16px -8px oklch(0.2 0.02 70 / 0.28);
+  /* Retuned fills; names kept so no caller breaks. */
+  --paper-2: oklch(0.24 0.014 260);
+  --paper-3: oklch(0.28 0.014 260);
+  --ink-2: oklch(0.38 0.014 260);
+  --shadow-raised: 0 8px 16px -8px oklch(0 0 0 / 0.6);
 
   /* Radius: one step per nesting level, never a derivation.
      mark 4 · inner 6 · control 8 · panel 10 · card 12.
-     A nested radius is its parent minus the inset: the segmented track is 8
-     and pads 2, so its selected item is 6. Pins are circles, the one exception. */
+     Pins are circles, the one exception. */
   --radius-mark: 4px;
   --radius-inner: 6px;
   --radius-control: 8px;
@@ -126,8 +151,8 @@
   --text-2xs: 0.625rem;
   --text-xs: 0.6875rem;
   --text-sm: 0.75rem;
-  --text-base: 0.8125rem;
-  --text-md: 0.875rem;
+  --text-base: 0.875rem;
+  --text-md: 0.9375rem;
   --text-lg: 1rem;
   --text-xl: 1.25rem;
   --text-2xl: 1.75rem;

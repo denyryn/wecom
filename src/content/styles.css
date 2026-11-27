@@ -1,12 +1,12 @@
-/* Hallmark · checked: 2026-10-24 · genre: modern-minimal · scope: app
- * floor: 0 FAIL · redesign: full · shape: app screen · posture: restrained
+/* Hallmark · checked: 2026-11-27 · genre: modern-minimal · scope: app
+ * floor: 0 FAIL · redesign: dark instrument · shape: app screen · posture: precise
  * surface: shadow-root overlay, tokens only, no rule reaches the host page
  * built: the project · every handler, prop and aria label kept · v2.0.0
  */
-/* Hallmark · pre-emit critique: P4 H4 E5 S5 R5 V4 · weakest: P, a paper-and-ink
- * skin on a review tool; the argument is that a comment is a mark, so the marker
- * only ever appears on the target, the pin and the mode, never as decoration.
- * The mode hint now carries one marker swipe and a tighter three-part rhythm.
+/* Hallmark · pre-emit critique: P4 H4 E5 S5 R5 V4 · weakest: P, a dark skin on a
+ * review tool; the argument is that a comment is a mark, so the marker only ever
+ * appears on the target, the pin, the mode, focus and selection, never decoration.
+ * The 4px scale now gives cards a 16px body and one column gap below the island.
  */
 @import "tailwindcss";
 @import "../styles/tokens.css";
@@ -136,8 +136,8 @@
   flex: none;
   align-items: center;
   gap: var(--space-xs);
-  min-height: 40px;
-  padding: var(--space-2xs) var(--space-sm);
+  min-height: 44px;
+  padding: var(--space-xs) var(--space-md);
   border-bottom: 1px solid var(--border);
 }
 
@@ -146,7 +146,7 @@
   flex: 1 1 auto;
   flex-direction: column;
   min-height: 0;
-  padding: var(--space-sm);
+  padding: var(--space-md) var(--space-md) 0;
   overflow-y: auto;
   overscroll-behavior: contain;
 }
@@ -159,6 +159,7 @@
   justify-content: space-between;
   gap: var(--space-xs);
   margin-top: var(--space-sm);
+  padding-bottom: var(--space-md);
 }
 
 /* The picked element is the one thing on the card that is highlighted. */
@@ -214,7 +215,7 @@
   min-height: 4.5rem;
   gap: var(--space-3xs);
   margin-bottom: var(--space-sm);
-  padding-bottom: var(--space-sm);
+  padding-bottom: var(--space-md);
   border-bottom: 1px solid var(--border);
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -222,7 +223,7 @@
 
 .element-fact {
   display: grid;
-  grid-template-columns: 3.5rem minmax(0, 1fr);
+  grid-template-columns: 4rem minmax(0, 1fr);
   gap: var(--space-xs);
   align-items: baseline;
 }
@@ -324,6 +325,7 @@
 /* Page-comment utility bar: mode state, count and the two actions. The marker
    is a swipe under the label while mode is on, never a filled block. */
 .mode-hint {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -331,7 +333,7 @@
   gap: var(--space-xs);
   row-gap: var(--space-2xs);
   max-width: 100%;
-  padding: var(--space-2xs) var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
   border: 1px solid var(--border);
   border-radius: var(--radius-panel);
   background-color: var(--popover);
@@ -421,9 +423,77 @@
   display: none;
 }
 
+/* The island is the bar's address on the viewport. Placement is data-driven so
+   the six positions need no positioning logic in React. */
+.island {
+  display: flex;
+  /* Above the comment list: the picker opens into the list's top edge. */
+  z-index: 2;
+}
+
+.island[data-v="top"] {
+  top: var(--space-sm);
+}
+
+.island[data-v="bottom"] {
+  bottom: var(--space-sm);
+}
+
+.island[data-h="left"] {
+  justify-content: flex-start;
+}
+
+.island[data-h="center"] {
+  justify-content: center;
+}
+
+.island[data-h="right"] {
+  justify-content: flex-end;
+}
+
+/* Inline picker, not a portal: the overlay lives inside a shadow root. */
+.island-picker {
+  position: absolute;
+  top: calc(100% + var(--space-xs));
+  left: 50%;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(3, max-content);
+  gap: var(--space-3xs);
+  padding: var(--space-2xs);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+  background-color: var(--popover);
+  box-shadow: var(--shadow-raised);
+  transform: translateX(-50%);
+  animation: hint-in var(--dur-micro) var(--ease-out);
+}
+
+/* Edge-aligned islands keep the picker inside the viewport. */
+.island[data-h="left"] .island-picker {
+  left: 0;
+  transform: none;
+}
+
+.island[data-h="right"] .island-picker {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+
+.island[data-v="bottom"] .island-picker {
+  top: auto;
+  bottom: calc(100% + var(--space-xs));
+}
+
+.island-picker__option {
+  white-space: nowrap;
+}
+
 /* Floating comment index. The bar opens it; the header flips the edge. */
 .comment-list {
   position: absolute;
+  z-index: 1;
   top: 3.5rem;
   bottom: var(--space-xs);
   display: flex;
@@ -451,9 +521,9 @@
   display: flex;
   flex: none;
   align-items: center;
-  gap: var(--space-2xs);
-  min-height: 40px;
-  padding: var(--space-2xs) var(--space-sm);
+  gap: var(--space-xs);
+  min-height: 44px;
+  padding: var(--space-xs) var(--space-md);
   border-bottom: 1px solid var(--border);
 }
 
@@ -481,7 +551,7 @@
   flex-direction: column;
   gap: var(--space-3xs);
   margin: 0;
-  padding: var(--space-2xs);
+  padding: var(--space-xs);
   overflow-y: auto;
   overscroll-behavior: contain;
   list-style: none;
@@ -491,7 +561,7 @@
   display: flex;
   align-items: flex-start;
   gap: var(--space-2xs);
-  padding: var(--space-2xs);
+  padding: var(--space-xs);
   border-radius: var(--radius-inner);
   transition: background-color var(--dur-micro) var(--ease-out);
 }
@@ -620,6 +690,7 @@
   .anchored-card,
   .mode-hint,
   .mode-hint[data-leaving="true"],
+  .island-picker,
   .comment-list {
     animation: none;
   }

@@ -77,7 +77,7 @@ export function ReadCard({comment, anchor, onSave, onDelete, onClose}: ReadCardP
             className="card-input min-h-20 resize-none leading-relaxed"
           />
         ) : (
-          <p className="max-h-56 overflow-y-auto whitespace-pre-wrap text-[13px] leading-relaxed">
+          <p className="max-h-56 overflow-y-auto whitespace-pre-wrap text-[length:var(--text-base)] leading-relaxed">
             {comment.body}
           </p>
         )}

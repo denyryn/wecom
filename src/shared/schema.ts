@@ -55,6 +55,16 @@ export type ExportDetail = (typeof EXPORT_DETAILS)[number]
 export const LIST_SIDES = ["left", "right"] as const
 export type ListSide = (typeof LIST_SIDES)[number]
 
+export const ISLAND_POSITIONS = [
+  "top-center",
+  "top-left",
+  "top-right",
+  "bottom-center",
+  "bottom-left",
+  "bottom-right"
+] as const
+export type IslandPosition = (typeof ISLAND_POSITIONS)[number]
+
 export const SCHEMA_VERSION = 2
 
 export function newCommentId(): string {

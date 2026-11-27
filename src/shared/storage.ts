@@ -1,10 +1,11 @@
-import type {Comment, ExportDetail, ListSide} from "./schema"
-import {EXPORT_DETAILS, LIST_SIDES} from "./schema"
+import type {Comment, ExportDetail, IslandPosition, ListSide} from "./schema"
+import {EXPORT_DETAILS, ISLAND_POSITIONS, LIST_SIDES} from "./schema"
 import {browserApi} from "@/shared/browser"
 
 const PAGES_KEY = "pages"
 const DETAIL_KEY = "exportDetail"
 const SIDE_KEY = "listSide"
+const ISLAND_KEY = "islandPosition"
 
 type Pages = Record<string, Comment[]>
 
@@ -90,6 +91,20 @@ export async function loadListSide(): Promise<ListSide> {
 
 export async function saveListSide(side: ListSide): Promise<void> {
   await browserApi().storage.local.set({[SIDE_KEY]: side})
+}
+
+/** Where the floating mode bar sits. Same fallback rule as the other settings. */
+export async function loadIslandPosition(): Promise<IslandPosition> {
+  const stored = await browserApi().storage.local.get(ISLAND_KEY)
+  const value = stored[ISLAND_KEY]
+
+  return ISLAND_POSITIONS.includes(value as IslandPosition)
+    ? (value as IslandPosition)
+    : "top-center"
+}
+
+export async function saveIslandPosition(position: IslandPosition): Promise<void> {
+  await browserApi().storage.local.set({[ISLAND_KEY]: position})
 }
 
 /**

@@ -68,7 +68,8 @@ Click a pin any time to reread, edit, or delete that comment.
 
 While there is at least one comment, or while comment mode is on, a bar sits at the top of the
 page with the mode state, the count for this page, the comment list, **Copy JSON**, and
-**Ditch all**, which clears the page after a second click.
+**Ditch all**, which clears the page after a second click. Use the **Move island** button on the
+bar to place it at the top or bottom, on the left, centre or right. The choice is remembered.
 
 The list button opens a panel on either screen edge. Click a row to open its pin, copy that one
 comment as JSON, or delete it. Comments whose element is gone from the page still appear in the
@@ -334,7 +335,10 @@ pin; it is still in the export.
   `globalThis.browser`.
 - **No portal-based shadcn primitives in the overlay.** Dialog, Popover, Tooltip, Select, and
   DropdownMenu portal to `document.body`, outside the shadow root. They are avoided in the popup
-  too, for consistency.
+  too, for consistency. The island's position picker is inline for the same reason.
+- **Fonts are bundled, not fetched.** IBM Plex Mono (SIL OFL 1.1, `src/fonts/`) is inlined into
+  the CSS by the `configResolved` rule in `extension.config.js`; the overlay stylesheet is itself
+  a `data:` URL, so a relative font URL would not resolve. No runtime network request is made.
 - **React 18 with shadcn's `ref`-as-prop components.** shadcn generates React 19 components;
   React 18 drops `ref` on function components. Use `autoFocus` and plain props on `Textarea`,
   `Input`, and friends, or convert them to `forwardRef` first.

@@ -1,13 +1,12 @@
-/* Hallmark · checked: 2026-10-24 · genre: modern-minimal · scope: app
- * floor: 0 FAIL · redesign: full · shape: app screen · posture: restrained
- * surface: 320px browser popup, system face only so it works offline
+/* Hallmark · checked: 2026-11-27 · genre: modern-minimal · scope: app
+ * floor: 0 FAIL · redesign: dark instrument · shape: app screen · posture: precise
+ * surface: 320px browser popup, one locally bundled face so it works offline
  * built: the project · every handler, prop and aria label kept · v2.0.0
  */
-/* Hallmark · pre-emit critique: P4 H4 E5 S5 R5 V4 · weakest: P, a paper-and-ink
- * skin on a review tool; the argument is that a comment is a mark, so the marker
- * only ever appears on the target, the pin and the mode, never as decoration.
- * The radius scale is a deliberate ladder now, so the popup's nesting reads
- * concentric instead of square.
+/* Hallmark · pre-emit critique: P4 H4 E5 S5 R5 V4 · weakest: P, a dark skin on a
+ * review tool; the argument is that a comment is a mark, so the marker only ever
+ * appears on focus and selection here. The 20px frame and 12px group gaps give
+ * the mono UI room to breathe inside 320px.
  */
 @import "tailwindcss";
 @import "../styles/tokens.css";

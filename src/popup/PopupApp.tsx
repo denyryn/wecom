@@ -124,7 +124,7 @@ export default function PopupApp() {
   }
 
   return (
-    <main className="flex flex-col gap-3 p-4">
+    <main className="flex flex-col gap-3 p-5">
       <header className="flex flex-col gap-1">
         <h1 className="flex items-center gap-1.5 text-[14px] font-semibold leading-tight tracking-[-0.01em]">
           <img src={appIcon} alt="" className="size-4 shrink-0" />
@@ -137,7 +137,7 @@ export default function PopupApp() {
 
       <section
         aria-label="Comments on this page"
-        className="border-y border-border py-3"
+        className="border-y border-border py-4"
       >
         {!tab?.url ? (
           <p className="flex min-h-9 items-center text-[11px] leading-snug text-muted-foreground">
@@ -240,7 +240,7 @@ export default function PopupApp() {
         </Button>
       </div>
 
-      <footer className="flex flex-col gap-1 border-t border-border pt-3">
+      <footer className="flex flex-col gap-1 border-t border-border pt-4">
         <p className="text-[11px] text-muted-foreground">
           {total === 1 ? "1 comment" : `${total ?? "…"} comments`} across all pages
         </p>

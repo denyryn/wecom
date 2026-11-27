@@ -6,6 +6,12 @@ const startingUrl = 'https://example.com'
 const ciFlags = process.env.CI ? ['--no-sandbox', '--disable-gpu'] : []
 
 export default {
+  // The overlay stylesheet is injected into a shadow root as a data: URL, so a
+  // relative font URL would not resolve. Inline the woff2 into the CSS itself.
+  configResolved: (config) => {
+    config.module.rules.push({test: /\.woff2$/i, type: 'asset/inline'})
+    return config
+  },
   browser: {
     chrome: {profile: profile('chrome'), startingUrl, browserFlags: ciFlags},
     chromium: {

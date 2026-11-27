@@ -1,16 +1,25 @@
 import * as React from "react"
-import {Check, Copy, List, Trash2, TriangleAlert} from "lucide-react"
+import {Check, Copy, List, Move, Trash2, TriangleAlert} from "lucide-react"
 import {Badge} from "@/components/ui/badge"
 import {Button} from "@/components/ui/button"
 import {buildExportFrom, copyExport} from "@/shared/export"
 import {buildLocator, resolveLocator} from "@/shared/locator"
 import type {AnchorBox} from "@/shared/position"
-import {newCommentId, type Comment, type ListSide, type Locator} from "@/shared/schema"
+import {
+  ISLAND_POSITIONS,
+  newCommentId,
+  type Comment,
+  type IslandPosition,
+  type ListSide,
+  type Locator
+} from "@/shared/schema"
 import {
   loadComments,
   loadExportDetail,
+  loadIslandPosition,
   loadListSide,
   saveComments,
+  saveIslandPosition,
   saveListSide,
   urlKey,
   watchComments
@@ -53,12 +62,18 @@ export default function ContentApp({host}: ContentAppProps) {
   const [activeId, setActiveId] = React.useState<string | null>(null)
   const [listOpen, setListOpen] = React.useState(false)
   const [listSide, setListSide] = React.useState<ListSide>("right")
+  const [islandPosition, setIslandPosition] = React.useState<IslandPosition>("top-center")
+  const [positionOpen, setPositionOpen] = React.useState(false)
 
   React.useEffect(() => {
     let alive = true
 
     loadListSide()
       .then((side) => alive && setListSide(side))
+      .catch(() => {})
+
+    loadIslandPosition()
+      .then((position) => alive && setIslandPosition(position))
       .catch(() => {})
 
     loadComments(pageKey)
@@ -98,22 +113,23 @@ export default function ContentApp({host}: ContentAppProps) {
   }, [])
 
   React.useEffect(() => {
-    if (!draft && !activeId && !listOpen) return
+    if (!draft && !activeId && !listOpen && !positionOpen) return
 
     // Bubble phase, so an open card's own Escape handling (and the inspector's
-    // capture-phase handler) gets the first say.
+    // capture-phase handler) gets the first say. The position picker closes first.
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return
       event.preventDefault()
       event.stopPropagation()
-      if (draft) setDraft(null)
+      if (positionOpen) setPositionOpen(false)
+      else if (draft) setDraft(null)
       else if (activeId) setActiveId(null)
       else setListOpen(false)
     }
 
     document.addEventListener("keydown", onKeyDown)
     return () => document.removeEventListener("keydown", onKeyDown)
-  }, [draft, activeId, listOpen])
+  }, [draft, activeId, listOpen, positionOpen])
 
   React.useEffect(() => {
     if (mode !== "inspect") {
@@ -231,21 +247,37 @@ export default function ContentApp({host}: ContentAppProps) {
     return () => window.clearTimeout(timer)
   }, [showBar, barMounted])
 
+  React.useEffect(() => {
+    if (!barMounted) setPositionOpen(false)
+  }, [barMounted])
+
+  const [edge, align] = islandPosition.split("-")
+
   return (
     <div className="pointer-events-none fixed inset-0 z-[2147483647]">
       {hover ? <Highlight target={hover} /> : null}
       <PinLayer pins={pins} activeId={activeId} onSelect={setActiveId} />
 
       {barMounted ? (
-        <ModeHint
-          count={comments.length}
-          on={mode === "inspect"}
-          leaving={barLeaving}
-          listOpen={listOpen}
-          onToggleList={() => setListOpen((open) => !open)}
-          onCopy={async () => copyExport(buildExportFrom(comments, await loadExportDetail()))}
-          onDitch={ditchAll}
-        />
+        <div className="island pointer-events-none absolute inset-x-3" data-v={edge} data-h={align}>
+          <ModeHint
+            count={comments.length}
+            on={mode === "inspect"}
+            leaving={barLeaving}
+            listOpen={listOpen}
+            position={islandPosition}
+            positionOpen={positionOpen}
+            onPositionOpenChange={setPositionOpen}
+            onPositionChange={(next) => {
+              setIslandPosition(next)
+              setPositionOpen(false)
+              saveIslandPosition(next).catch(() => {})
+            }}
+            onToggleList={() => setListOpen((open) => !open)}
+            onCopy={async () => copyExport(buildExportFrom(comments, await loadExportDetail()))}
+            onDitch={ditchAll}
+          />
+        </div>
       ) : null}
 
       {listOpen ? (
@@ -350,12 +382,46 @@ type ModeHintProps = {
   on: boolean
   leaving: boolean
   listOpen: boolean
+  position: IslandPosition
+  positionOpen: boolean
+  onPositionOpenChange: (open: boolean) => void
+  onPositionChange: (position: IslandPosition) => void
   onToggleList: () => void
   onCopy: () => Promise<boolean>
   onDitch: () => void
 }
 
-function ModeHint({count, on, leaving, listOpen, onToggleList, onCopy, onDitch}: ModeHintProps) {
+const ISLAND_LABELS: Record<IslandPosition, string> = {
+  "top-left": "Top left",
+  "top-center": "Top centre",
+  "top-right": "Top right",
+  "bottom-left": "Bottom left",
+  "bottom-center": "Bottom centre",
+  "bottom-right": "Bottom right"
+}
+
+const ISLAND_PICKER_ORDER: IslandPosition[] = [
+  "top-left",
+  "top-center",
+  "top-right",
+  "bottom-left",
+  "bottom-center",
+  "bottom-right"
+]
+
+function ModeHint({
+  count,
+  on,
+  leaving,
+  listOpen,
+  position,
+  positionOpen,
+  onPositionOpenChange,
+  onPositionChange,
+  onToggleList,
+  onCopy,
+  onDitch
+}: ModeHintProps) {
   const [copyState, setCopyState] = React.useState<"copied" | "failed" | null>(null)
   const [armed, setArmed] = React.useState(false)
   const alive = React.useRef(true)
@@ -400,90 +466,122 @@ function ModeHint({count, on, leaving, listOpen, onToggleList, onCopy, onDitch}:
   }
 
   return (
-    <div className="pointer-events-none absolute inset-x-3 top-3 flex justify-center">
-      <div className="mode-hint" data-leaving={leaving ? "true" : "false"}>
-        <span className="mode-hint__lead">
-          <span className="mode-hint__label" data-on={on}>
-            Comment mode
-          </span>
-          <span className="sr-only">{on ? "on" : "off"}</span>
+    <div className="mode-hint" data-leaving={leaving ? "true" : "false"}>
+      <span className="mode-hint__lead">
+        <span className="mode-hint__label" data-on={on}>
+          Comment mode
         </span>
+        <span className="sr-only">{on ? "on" : "off"}</span>
+      </span>
 
-        <span className="mode-hint__count" aria-label={`${count} on this page`}>
-          {count}
-        </span>
+      <span className="mode-hint__count" aria-label={`${count} on this page`}>
+        {count}
+      </span>
 
-        <Button
-          variant="ghost"
-          size="icon-xs"
-          className={
-            listOpen
-              ? "rounded-sm bg-accent text-accent-foreground"
-              : "rounded-sm text-muted-foreground"
-          }
-          data-tooltip={listOpen ? "Hide comment list" : "Show comment list"}
-          aria-label={listOpen ? "Hide comment list" : "Show comment list"}
-          aria-pressed={listOpen}
-          onClick={onToggleList}
-        >
-          <List />
-        </Button>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        className={
+          positionOpen
+            ? "rounded-sm bg-accent text-accent-foreground"
+            : "rounded-sm text-muted-foreground"
+        }
+        data-tooltip={positionOpen ? undefined : "Move island"}
+        aria-label="Move island"
+        aria-expanded={positionOpen}
+        aria-pressed={positionOpen}
+        onClick={() => onPositionOpenChange(!positionOpen)}
+      >
+        <Move />
+      </Button>
 
-        <Button
-          variant="ghost"
-          size="icon-xs"
-          className={
-            copyState === "failed"
-              ? "rounded-sm text-destructive"
-              : "rounded-sm text-muted-foreground"
-          }
-          data-tooltip={
-            copyState === "copied" ? "Copied" : copyState === "failed" ? "Copy failed" : "Copy JSON"
-          }
-          aria-label={
-            copyState === "copied" ? "Copied" : copyState === "failed" ? "Copy failed" : "Copy JSON"
-          }
-          disabled={count === 0}
-          onClick={copy}
-        >
-          {copyState === "copied" ? (
-            <Check />
-          ) : copyState === "failed" ? (
-            <TriangleAlert />
-          ) : (
-            <Copy />
-          )}
-        </Button>
+      {positionOpen ? (
+        <div className="island-picker" role="group" aria-label="Island position">
+          {ISLAND_PICKER_ORDER.map((value) => (
+            <Button
+              key={value}
+              variant="ghost"
+              size="xs"
+              aria-pressed={position === value}
+              className="island-picker__option"
+              onClick={() => onPositionChange(value)}
+            >
+              {ISLAND_LABELS[value]}
+            </Button>
+          ))}
+        </div>
+      ) : null}
 
-        <Button
-          variant={armed ? "destructive" : "ghost"}
-          size="icon-xs"
-          className={
-            armed
-              ? "rounded-sm"
-              : "rounded-sm text-destructive hover:bg-destructive/10 hover:text-destructive"
-          }
-          data-tooltip={armed ? "Confirm ditch all" : "Ditch all"}
-          aria-label={armed ? "Confirm ditch all" : "Ditch all comments"}
-          onClick={ditch}
-          onBlur={disarm}
-          disabled={count === 0}
-        >
-          <Trash2 />
-        </Button>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        className={
+          listOpen
+            ? "rounded-sm bg-accent text-accent-foreground"
+            : "rounded-sm text-muted-foreground"
+        }
+        data-tooltip={listOpen ? "Hide comment list" : "Show comment list"}
+        aria-label={listOpen ? "Hide comment list" : "Show comment list"}
+        aria-pressed={listOpen}
+        onClick={onToggleList}
+      >
+        <List />
+      </Button>
 
-        {on ? <kbd className="kbd">Esc</kbd> : null}
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        className={
+          copyState === "failed"
+            ? "rounded-sm text-destructive"
+            : "rounded-sm text-muted-foreground"
+        }
+        data-tooltip={
+          copyState === "copied" ? "Copied" : copyState === "failed" ? "Copy failed" : "Copy JSON"
+        }
+        aria-label={
+          copyState === "copied" ? "Copied" : copyState === "failed" ? "Copy failed" : "Copy JSON"
+        }
+        disabled={count === 0}
+        onClick={copy}
+      >
+        {copyState === "copied" ? (
+          <Check />
+        ) : copyState === "failed" ? (
+          <TriangleAlert />
+        ) : (
+          <Copy />
+        )}
+      </Button>
 
-        <span role="status" className="sr-only">
-          {armed
-            ? "Click again to ditch all comments"
-            : copyState === "copied"
-              ? "Copied"
-              : copyState === "failed"
-                ? "Copy failed"
-                : ""}
-        </span>
-      </div>
+      <Button
+        variant={armed ? "destructive" : "ghost"}
+        size="icon-sm"
+        className={
+          armed
+            ? "rounded-sm"
+            : "rounded-sm text-destructive hover:bg-destructive/10 hover:text-destructive"
+        }
+        data-tooltip={armed ? "Confirm ditch all" : "Ditch all"}
+        aria-label={armed ? "Confirm ditch all" : "Ditch all comments"}
+        onClick={ditch}
+        onBlur={disarm}
+        disabled={count === 0}
+      >
+        <Trash2 />
+      </Button>
+
+      {on ? <kbd className="kbd">Esc</kbd> : null}
+
+      <span role="status" className="sr-only">
+        {armed
+          ? "Click again to ditch all comments"
+          : copyState === "copied"
+            ? "Copied"
+            : copyState === "failed"
+              ? "Copy failed"
+              : ""}
+      </span>
     </div>
   )
 }
