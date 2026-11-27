@@ -2,6 +2,14 @@
 
 All notable changes to Wecom are recorded here. Releases before 0.5.0 are documented in git tags and commit messages.
 
+## 0.5.1 — 2026-11-27
+
+### Changed
+
+- Popup header: more space between the wordmark and description, with balanced wrapping so no word is orphaned.
+- Popup count block: the figure now anchors one compact row, with the page count and the all-pages total grouped beside it.
+- Popup footer: roomier row rhythm and a baseline-aligned shortcut keycap; the all-pages total no longer sits in the footer.
+
 ## 0.5.0 — 2026-11-27
 
 ### Added
