@@ -125,12 +125,12 @@ export default function PopupApp() {
 
   return (
     <main className="flex flex-col gap-3 p-5">
-      <header className="flex flex-col gap-1">
-        <h1 className="flex items-center gap-1.5 text-[14px] font-semibold leading-tight tracking-[-0.01em]">
+      <header className="flex flex-col gap-2">
+        <h1 className="flex items-center gap-2 text-[14px] font-semibold leading-tight tracking-[-0.01em]">
           <img src={appIcon} alt="" className="size-4 shrink-0" />
           Wecom
         </h1>
-        <p className="text-[11px] leading-snug text-muted-foreground">
+        <p className="text-balance text-[11px] leading-snug text-muted-foreground">
           Click an element, leave a note, export JSON an agent can act on.
         </p>
       </header>
@@ -139,22 +139,27 @@ export default function PopupApp() {
         aria-label="Comments on this page"
         className="border-y border-border py-4"
       >
-        {!tab?.url ? (
-          <p className="flex min-h-9 items-center text-[11px] leading-snug text-muted-foreground">
-            This page is not readable from the popup.
-          </p>
-        ) : count === null ? (
-          <p className="flex min-h-9 items-center text-[11px] text-muted-foreground">Loading…</p>
-        ) : (
-          <div className="flex min-h-9 items-baseline gap-2">
+        <div className="flex items-center gap-3">
+          {!tab?.url ? null : (
             <span className="text-[30px] leading-none font-semibold tracking-[-0.02em] tabular-nums">
-              {count}
+              {count ?? "…"}
             </span>
-            <span className="text-[12px] leading-snug text-muted-foreground">
-              {count === 1 ? "comment on this page" : "comments on this page"}
+          )}
+          <div className="flex min-w-0 flex-col gap-1">
+            <span className="text-[12px] leading-snug text-foreground">
+              {!tab?.url
+                ? "This page is not readable from the popup."
+                : count === null
+                  ? "Loading…"
+                  : count === 1
+                    ? "comment on this page"
+                    : "comments on this page"}
+            </span>
+            <span className="text-[11px] leading-snug text-muted-foreground">
+              {total === 1 ? "1 comment" : `${total ?? "…"} comments`} across all pages
             </span>
           </div>
-        )}
+        </div>
       </section>
 
       <Button onClick={toggle} className="w-full">
@@ -240,11 +245,8 @@ export default function PopupApp() {
         </Button>
       </div>
 
-      <footer className="flex flex-col gap-1 border-t border-border pt-4">
-        <p className="text-[11px] text-muted-foreground">
-          {total === 1 ? "1 comment" : `${total ?? "…"} comments`} across all pages
-        </p>
-        <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+      <footer className="border-t border-border pt-4">
+        <p className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-[11px] leading-snug text-muted-foreground">
           <kbd className="kbd">Ctrl+\</kbd>
           <span>toggles comment mode</span>
         </p>
