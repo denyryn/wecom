@@ -1,5 +1,5 @@
 import {afterEach, describe, expect, it, vi} from "vitest"
-import {isolateHostEvents, promoteHost} from "@/content/overlay-host"
+import {isolateHostEvents, promoteHost, syncHostLayer, watchHostLayer} from "@/content/overlay-host"
 
 const hosts: HTMLElement[] = []
 
@@ -52,6 +52,21 @@ describe("isolateHostEvents", () => {
     expect(pageDown).toHaveBeenCalledTimes(1)
     document.removeEventListener("pointerdown", pageDown)
   })
+
+  it("keeps focus events away from a page dialog focus trap", () => {
+    const {host, button} = mountHost()
+    const pageFocusIn = vi.fn()
+    document.addEventListener("focusin", pageFocusIn)
+
+    const stop = isolateHostEvents(host)
+    button.dispatchEvent(new Event("focusin", {bubbles: true, composed: true}))
+    expect(pageFocusIn).not.toHaveBeenCalled()
+
+    stop()
+    button.dispatchEvent(new Event("focusin", {bubbles: true, composed: true}))
+    expect(pageFocusIn).toHaveBeenCalledTimes(1)
+    document.removeEventListener("focusin", pageFocusIn)
+  })
 })
 
 describe("promoteHost", () => {
@@ -62,5 +77,59 @@ describe("promoteHost", () => {
   it("falls back quietly when the engine has no popover API", () => {
     const {host} = mountHost()
     expect(() => promoteHost(host)).not.toThrow()
+  })
+})
+
+describe("syncHostLayer", () => {
+  afterEach(() => {
+    for (const dialog of Array.from(document.querySelectorAll("dialog"))) dialog.remove()
+    for (const host of hosts.splice(0)) host.remove()
+  })
+
+  function modal(): HTMLDialogElement {
+    const dialog = document.createElement("dialog")
+    vi.spyOn(dialog, "matches").mockImplementation(
+      (selector) => selector === ":modal" || HTMLDialogElement.prototype.matches.call(dialog, selector)
+    )
+    document.body.appendChild(dialog)
+    return dialog
+  }
+
+  it("docks into a modal dialog and undoes page hiding", () => {
+    const {host} = mountHost()
+    const dialog = modal()
+    host.inert = true
+    host.setAttribute("aria-hidden", "true")
+
+    syncHostLayer(host)
+
+    expect(host.parentElement).toBe(dialog)
+    expect(host.inert).toBe(false)
+    expect(host.hasAttribute("aria-hidden")).toBe(false)
+
+    vi.spyOn(dialog, "matches").mockImplementation(
+      (selector) => selector !== ":modal" && HTMLDialogElement.prototype.matches.call(dialog, selector)
+    )
+    syncHostLayer(host)
+    expect(host.parentElement).toBe(document.body)
+  })
+
+  it("reattaches a host removed by a page re-render", () => {
+    const {host} = mountHost()
+    host.remove()
+
+    syncHostLayer(host)
+    expect(host.parentElement).toBe(document.body)
+  })
+
+  it("docks when a dialog opens while the overlay is live", async () => {
+    const {host} = mountHost()
+    const stop = watchHostLayer(host)
+    const dialog = modal()
+
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(host.parentElement).toBe(dialog)
+
+    stop()
   })
 })

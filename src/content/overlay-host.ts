@@ -18,7 +18,11 @@ const PAGE_EVENTS = [
   "dblclick",
   "auxclick",
   "contextmenu",
-  "wheel"
+  "wheel",
+  // Dialog focus traps pull focus back when they see it leave the dialog.
+  // Our card's focus events must stay inside the overlay.
+  "focusin",
+  "focusout"
 ] as const
 
 export function isolateHostEvents(host: HTMLElement): () => void {
@@ -46,12 +50,60 @@ export function promoteHost(host: HTMLElement): void {
   const element = host as PopoverHost
   if (typeof element.showPopover !== "function") return
 
+  const focused = host.shadowRoot?.activeElement as HTMLElement | null
   try {
     // showPopover() on an already-open popover is a no-op, so a re-promote has
     // to close it first for the new top-layer order to take effect.
     if (host.matches(":popover-open")) element.hidePopover?.()
     element.showPopover()
+    focused?.focus({preventScroll: true})
   } catch {
     // Engines without a usable top layer keep the fixed, max z-index fallback.
   }
+}
+
+let dockedDialog: HTMLDialogElement | null = null
+
+/**
+ * A modal dialog makes everything outside it inert — including a top-layer
+ * popover — so our textarea cannot take focus while it is open. Dock the host
+ * in the dialog and re-promote it there: it is then inside the one subtree the
+ * browser keeps interactive, while the popover layer keeps it above the page.
+ */
+export function syncHostLayer(host: HTMLElement): void {
+  const dialog = Array.from(document.querySelectorAll("dialog")).find(isModal) ?? null
+  const parent: HTMLElement = dialog ?? document.body
+
+  if (host.parentElement !== parent) parent.appendChild(host)
+
+  // Libraries mark other page nodes inert/aria-hidden while a dialog is open.
+  host.inert = false
+  host.removeAttribute("aria-hidden")
+
+  if (dockedDialog !== dialog || !host.isConnected) {
+    promoteHost(host)
+    dockedDialog = dialog
+  }
+}
+
+function isModal(dialog: HTMLDialogElement): boolean {
+  try {
+    return dialog.matches(":modal")
+  } catch {
+    return false
+  }
+}
+
+/** Re-dock when the page opens, closes or replaces a modal dialog. */
+export function watchHostLayer(host: HTMLElement): () => void {
+  const observer = new MutationObserver(() => syncHostLayer(host))
+  observer.observe(document.documentElement, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ["open", "inert", "aria-hidden"]
+  })
+  syncHostLayer(host)
+
+  return () => observer.disconnect()
 }

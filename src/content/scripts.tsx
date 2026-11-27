@@ -4,7 +4,7 @@ import {trackContextTarget} from "./context-target"
 import {trackToggleHotkey} from "./hotkey"
 import {emitCommentElement, emitToggleInspect} from "./toggle"
 import {copyAllJson, ditchPage, ditchSite} from "./page-actions"
-import {isolateHostEvents, promoteHost} from "./overlay-host"
+import {isolateHostEvents, watchHostLayer} from "./overlay-host"
 import {browserApi} from "@/shared/browser"
 
 /**
@@ -40,7 +40,7 @@ export default function initial() {
   ].join("; ")
   host.setAttribute("popover", "manual")
   document.body.appendChild(host)
-  promoteHost(host)
+  const stopHostLayer = watchHostLayer(host)
   const stopHostEvents = isolateHostEvents(host)
   const stopTrackingContext = trackContextTarget(host)
   const stopHotkey = trackToggleHotkey()
@@ -48,8 +48,7 @@ export default function initial() {
   const shadowRoot = host.attachShadow({mode: "open"})
   const styleElement = document.createElement("style")
   shadowRoot.appendChild(styleElement)
-
-  fetchCSS().then((css) => (styleElement.textContent = css))
+  void injectCSS(styleElement).catch(() => {})
 
   // `all: initial` also drops inherited typography, and custom properties
   // survive it — which is why the design tokens keep working but the font has
@@ -73,6 +72,7 @@ export default function initial() {
 
   return () => {
     browserApi().runtime.onMessage.removeListener(onMessage)
+    stopHostLayer()
     stopHostEvents()
     stopTrackingContext()
     stopHotkey()
@@ -81,12 +81,16 @@ export default function initial() {
   }
 }
 
-async function fetchCSS() {
-  // Extension.js inlines this import as a `data:` URL; a shadow root ignores
-  // stylesheets that live outside it, so the text is fetched and inserted.
-  const cssUrl = new URL("./styles.css", import.meta.url)
-  const response = await fetch(cssUrl)
-  const text = await response.text()
+async function injectCSS(style: HTMLStyleElement): Promise<void> {
+  // Extension.js inlines this import as a data: URL. Decoding it keeps the
+  // stylesheet in this shadow root even where a page CSP blocks fetch().
+  const url = new URL("./styles.css", import.meta.url)
+  if (url.protocol === "data:") {
+    style.textContent = decodeURIComponent(url.href.slice(url.href.indexOf(",") + 1))
+    return
+  }
 
-  return response.ok ? text : Promise.reject(text)
+  const response = await fetch(url)
+  if (!response.ok) return
+  style.textContent = await response.text()
 }
