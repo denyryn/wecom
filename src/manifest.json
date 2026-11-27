@@ -47,6 +47,16 @@
         "<all_urls>"
       ],
       "js": [
+        "./content/input-guard.ts"
+      ],
+      "run_at": "document_start",
+      "all_frames": false
+    },
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
         "./content/scripts.tsx"
       ],
       "run_at": "document_idle",
