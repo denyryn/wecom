@@ -1,4 +1,7 @@
+import * as React from "react"
+import {renderToStaticMarkup} from "react-dom/server"
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
+import {ElementFacts} from "@/content/components/ElementFacts"
 import {buildExportFrom, projectComment, serializeExport} from "@/shared/export"
 import {buildLocator, resolveLocator} from "@/shared/locator"
 import {SCHEMA_VERSION, type Comment} from "@/shared/schema"
@@ -102,11 +105,20 @@ describe("buildLocator", () => {
     expect(resolveLocator(locator, document)).toBeNull()
   })
 
-  it("captures the computed font family", () => {
-    document.body.innerHTML = `<p id="f" style="font-family: Georgia, serif">x</p>`
+  it("captures the computed font family, weight and style", () => {
+    document.body.innerHTML = `<p id="f" style="font-family: Georgia, serif; font-weight: 700; font-style: italic">x</p>`
     const locator = buildLocator(document.getElementById("f")!, document)
 
     expect(locator.font).toContain("Georgia")
+    expect(locator.fontWeight).toBe("700")
+    expect(locator.fontStyle).toBe("italic")
+  })
+
+  it("labels bold and italic in the font fact", () => {
+    const locator = {...fullComment.target, font: "Georgia, serif", fontWeight: "700", fontStyle: "italic"}
+    const html = renderToStaticMarkup(React.createElement(ElementFacts, {locator}))
+
+    expect(html).toContain("Georgia · Bold · Italic")
   })
 
   it("collapses and caps visible text", () => {

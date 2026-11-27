@@ -24,6 +24,9 @@ export type Locator = {
   role: string | null
   /** Computed font-family of the picked element; absent on older comments. */
   font?: string | null
+  /** Computed font-weight and font-style, used for the bold/italic badges. */
+  fontWeight?: string | null
+  fontStyle?: string | null
   /** Document coordinates, CSS px. */
   rect: LocatorRect
   visible: boolean

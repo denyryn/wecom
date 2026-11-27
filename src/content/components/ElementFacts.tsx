@@ -46,6 +46,15 @@ export function ElementFacts({locator}: {locator: Locator}) {
   const ancestors = locator.ancestors.join(" › ")
   const width = Math.round(locator.rect.width)
   const height = Math.round(locator.rect.height)
+  const family = locator.font?.split(",")[0].replace(/^["']|["']$/g, "") ?? ""
+  const bold = /^(bold|bolder|[6-9]\d\d)$/i.test(locator.fontWeight ?? "")
+  const italic = /italic|oblique/i.test(locator.fontStyle ?? "")
+  const fontLabel = [family, bold ? "Bold" : null, italic ? "Italic" : null]
+    .filter(Boolean)
+    .join(" · ")
+  const fontTitle = [locator.font, locator.fontWeight, locator.fontStyle]
+    .filter(Boolean)
+    .join(" · ")
 
   return (
     <dl className="element-facts">
@@ -63,11 +72,11 @@ export function ElementFacts({locator}: {locator: Locator}) {
         </dd>
       </div>
 
-      {locator.font ? (
+      {fontLabel ? (
         <div className="element-fact">
           <dt>Font</dt>
-          <dd className="element-fact__code" translate="no" title={locator.font}>
-            {locator.font.split(",")[0].replace(/^["']|["']$/g, "")}
+          <dd className="element-fact__code" translate="no" title={fontTitle || fontLabel}>
+            {fontLabel}
           </dd>
         </div>
       ) : null}
