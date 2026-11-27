@@ -63,6 +63,15 @@ export function ElementFacts({locator}: {locator: Locator}) {
         </dd>
       </div>
 
+      {locator.font ? (
+        <div className="element-fact">
+          <dt>Font</dt>
+          <dd className="element-fact__code" translate="no" title={locator.font}>
+            {locator.font.split(",")[0].replace(/^["']|["']$/g, "")}
+          </dd>
+        </div>
+      ) : null}
+
       {locator.text ? (
         <div className="element-fact">
           <dt>Text</dt>

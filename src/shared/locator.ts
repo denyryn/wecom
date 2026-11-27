@@ -74,6 +74,7 @@ export function buildLocator(element: Element, doc: Document = document): Locato
     domIndex: childIndices(element),
     attrs: pickAttributes(element),
     role: element.getAttribute("role"),
+    font: style?.fontFamily?.trim() || null,
     rect: toDocumentRect(rect, view?.scrollX ?? 0, view?.scrollY ?? 0),
     visible:
       rect.width > 0 &&

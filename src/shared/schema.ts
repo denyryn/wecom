@@ -22,6 +22,8 @@ export type Locator = {
   domIndex: number[]
   attrs: Record<string, string>
   role: string | null
+  /** Computed font-family of the picked element; absent on older comments. */
+  font?: string | null
   /** Document coordinates, CSS px. */
   rect: LocatorRect
   visible: boolean

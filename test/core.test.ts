@@ -102,6 +102,13 @@ describe("buildLocator", () => {
     expect(resolveLocator(locator, document)).toBeNull()
   })
 
+  it("captures the computed font family", () => {
+    document.body.innerHTML = `<p id="f" style="font-family: Georgia, serif">x</p>`
+    const locator = buildLocator(document.getElementById("f")!, document)
+
+    expect(locator.font).toContain("Georgia")
+  })
+
   it("collapses and caps visible text", () => {
     document.body.innerHTML = `<p id="long">  a   b\tc ${"x".repeat(200)} </p>`
     const locator = buildLocator(document.getElementById("long")!, document)
