@@ -13,7 +13,9 @@ function isOurs(event: Event): boolean {
 }
 
 export default function installInputGuard(): () => void {
-  // Stop focusin, not focusout: React's own onBlur handlers still need to run.
+  // react-bootstrap enforces focus on capture-phase `focus`, not `focusin`.
+  // Stop both before the page sees them; leave focusout alone so our own
+  // React onBlur handlers still run.
   const onFocusIn = (event: FocusEvent) => {
     if (!isOurs(event)) return
     event.stopPropagation()
@@ -26,11 +28,15 @@ export default function installInputGuard(): () => void {
     if (isOurs(event)) event.preventDefault = () => {}
   }
 
-  window.addEventListener("focusin", onFocusIn, true)
+  for (const type of ["focus", "focusin"] as const) {
+    window.addEventListener(type, onFocusIn, true)
+  }
   for (const type of GUARDED_KEYS) window.addEventListener(type, onKey, true)
 
   return () => {
-    window.removeEventListener("focusin", onFocusIn, true)
+    for (const type of ["focus", "focusin"] as const) {
+      window.removeEventListener(type, onFocusIn, true)
+    }
     for (const type of GUARDED_KEYS) window.removeEventListener(type, onKey, true)
   }
 }

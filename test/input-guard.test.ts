@@ -33,6 +33,18 @@ describe("installInputGuard", () => {
     window.removeEventListener("focusin", pageTrap, true)
   })
 
+  it("hides our focus from a modal that enforces focus on capture-phase focus", () => {
+    const textarea = mount()
+    cleanups.push(installInputGuard())
+
+    const pageTrap = vi.fn()
+    window.addEventListener("focus", pageTrap, true)
+    textarea.dispatchEvent(new FocusEvent("focus", {bubbles: false, composed: true}))
+
+    expect(pageTrap).not.toHaveBeenCalled()
+    window.removeEventListener("focus", pageTrap, true)
+  })
+
   it("neutralizes keypress and beforeinput cancellation from the page", () => {
     const textarea = mount()
     cleanups.push(installInputGuard())
