@@ -5,8 +5,8 @@
  *
  * The listener sits on the shadow host in the bubble phase, so React inside
  * the shadow root has already handled the event, and the page above the host
- * never sees it. Keyboard events are deliberately left alone: Escape is
- * consumed by the app's document-level handler.
+ * never sees it. Keydown needs a different guard: the page must still see
+ * Escape, but must not be allowed to cancel typing in our textarea.
  */
 const PAGE_EVENTS = [
   "pointerdown",
@@ -18,11 +18,7 @@ const PAGE_EVENTS = [
   "dblclick",
   "auxclick",
   "contextmenu",
-  "wheel",
-  // Dialog focus traps pull focus back when they see it leave the dialog.
-  // Our card's focus events must stay inside the overlay.
-  "focusin",
-  "focusout"
+  "wheel"
 ] as const
 
 export function isolateHostEvents(host: HTMLElement): () => void {
@@ -30,8 +26,29 @@ export function isolateHostEvents(host: HTMLElement): () => void {
 
   for (const type of PAGE_EVENTS) host.addEventListener(type, stop)
 
+  // Focus traps listen in the capture phase on document, so stopping focus at
+  // the host in the bubble phase is too late. Window capture runs first.
+  const guardFocus = (event: FocusEvent) => {
+    if (event.composedPath().includes(host)) event.stopPropagation()
+  }
+
+  // Modal traps call preventDefault() on keys they think target the page: at
+  // document level our textarea retargets to the host, so every keystroke looks
+  // outside the dialog. Neutralize that call without stopping the event — the
+  // card's own keydown handlers (Escape, Ctrl+Enter) must still run.
+  const guardTyping = (event: KeyboardEvent) => {
+    if (event.composedPath().includes(host)) event.preventDefault = () => {}
+  }
+
+  window.addEventListener("focusin", guardFocus, true)
+  window.addEventListener("focusout", guardFocus, true)
+  window.addEventListener("keydown", guardTyping, true)
+
   return () => {
     for (const type of PAGE_EVENTS) host.removeEventListener(type, stop)
+    window.removeEventListener("focusin", guardFocus, true)
+    window.removeEventListener("focusout", guardFocus, true)
+    window.removeEventListener("keydown", guardTyping, true)
   }
 }
 

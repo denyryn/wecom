@@ -53,10 +53,10 @@ describe("isolateHostEvents", () => {
     document.removeEventListener("pointerdown", pageDown)
   })
 
-  it("keeps focus events away from a page dialog focus trap", () => {
+  it("keeps focus events away from a capture-phase dialog focus trap", () => {
     const {host, button} = mountHost()
     const pageFocusIn = vi.fn()
-    document.addEventListener("focusin", pageFocusIn)
+    document.addEventListener("focusin", pageFocusIn, true)
 
     const stop = isolateHostEvents(host)
     button.dispatchEvent(new Event("focusin", {bubbles: true, composed: true}))
@@ -65,7 +65,30 @@ describe("isolateHostEvents", () => {
     stop()
     button.dispatchEvent(new Event("focusin", {bubbles: true, composed: true}))
     expect(pageFocusIn).toHaveBeenCalledTimes(1)
-    document.removeEventListener("focusin", pageFocusIn)
+    document.removeEventListener("focusin", pageFocusIn, true)
+  })
+
+  it("lets the card receive typing when a modal cancels outside keys", () => {
+    const {host} = mountHost()
+    const root = host.attachShadow({mode: "open"})
+    const textarea = document.createElement("textarea")
+    root.appendChild(textarea)
+
+    // A modal trap sees the host, not the textarea, so it cancels the keystroke.
+    const pageKey = vi.fn((event: KeyboardEvent) => event.preventDefault())
+    document.addEventListener("keydown", pageKey, true)
+
+    const stop = isolateHostEvents(host)
+    const ownKey = vi.fn()
+    textarea.addEventListener("keydown", ownKey)
+    const event = new KeyboardEvent("keydown", {key: "a", bubbles: true, composed: true})
+    textarea.dispatchEvent(event)
+
+    expect(event.defaultPrevented).toBe(false)
+    expect(ownKey).toHaveBeenCalledTimes(1)
+
+    stop()
+    document.removeEventListener("keydown", pageKey, true)
   })
 })
 
